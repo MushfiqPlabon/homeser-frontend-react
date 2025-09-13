@@ -1,15 +1,19 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { CheckCircleIcon, PrinterIcon } from '@heroicons/react/24/outline';
+// PaymentSuccess.jsx
+// This page component is displayed after a successful payment, confirming the order
+// and providing next steps for the user.
+
+import { CheckCircleIcon, PrinterIcon } from "@heroicons/react/24/outline";
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 
 const PaymentSuccess = () => {
   const { orderId } = useParams();
-  const [orderDetails, setOrderDetails] = useState(null);
+  const [_orderDetails, _setOrderDetails] = useState(null);
 
   useEffect(() => {
     // In a real app, you would fetch order details from the backend
     // For now, we'll show a success message
-    console.log('Payment successful for order:', orderId);
+    console.log("Payment successful for order:", orderId);
   }, [orderId]);
 
   return (
@@ -26,12 +30,15 @@ const PaymentSuccess = () => {
             Payment Successful!
           </h2>
           <p className="text-gray-600 mb-6">
-            Thank you for your payment. Your order has been confirmed and our team will contact you soon.
+            Thank you for your payment. Your order has been confirmed and our
+            team will contact you soon.
           </p>
 
           {/* Order Details */}
           <div className="bg-gray-50 rounded-lg p-4 mb-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-2">Order Details</h3>
+            <h3 className="text-sm font-semibold text-gray-900 mb-2">
+              Order Details
+            </h3>
             <div className="text-sm text-gray-600 space-y-1">
               <div className="flex justify-between">
                 <span>Order ID:</span>
@@ -50,7 +57,9 @@ const PaymentSuccess = () => {
 
           {/* Next Steps */}
           <div className="bg-blue-50 rounded-lg p-4 mb-6">
-            <h3 className="text-sm font-semibold text-blue-900 mb-2">What's Next?</h3>
+            <h3 className="text-sm font-semibold text-blue-900 mb-2">
+              What's Next?
+            </h3>
             <ul className="text-sm text-blue-700 text-left space-y-1">
               <li>• You'll receive a confirmation email shortly</li>
               <li>• Our team will contact you within 24 hours</li>
@@ -61,19 +70,14 @@ const PaymentSuccess = () => {
 
           {/* Action Buttons */}
           <div className="space-y-3">
-            <Link
-              to="/dashboard"
-              className="w-full btn-primary"
-            >
+            <Link to="/dashboard" className="w-full btn-primary">
               View Order in Dashboard
             </Link>
-            <Link
-              to="/services"
-              className="w-full btn-secondary"
-            >
+            <Link to="/services" className="w-full btn-secondary">
               Continue Shopping
             </Link>
             <button
+              type="button"
               onClick={() => window.print()}
               className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
             >

@@ -1,21 +1,33 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+// Register.jsx
+// This page component provides the user interface for creating a new account.
+// It collects user details and interacts with the registration API.
+
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import { useId, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const Register = () => {
   const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    password_confirm: '',
-    first_name: '',
-    last_name: ''
+    first_name: "",
+    last_name: "",
+    username: "",
+    email: "",
+    password: "",
+    password_confirm: "",
   });
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Generate unique IDs for form elements
+  const firstNameInputId = useId();
+  const lastNameInputId = useId();
+  const usernameInputId = useId();
+  const emailInputId = useId();
+  const passwordInputId = useId();
+  const passwordConfirmInputId = useId();
 
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -23,13 +35,13 @@ const Register = () => {
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
     // Clear error when user starts typing
     if (errors[e.target.name]) {
       setErrors({
         ...errors,
-        [e.target.name]: ''
+        [e.target.name]: "",
       });
     }
   };
@@ -47,13 +59,13 @@ const Register = () => {
     }
 
     const result = await register(formData);
-    
+
     if (result.success) {
-      navigate('/');
+      navigate("/");
     } else {
       setErrors(result.error);
     }
-    
+
     setLoading(false);
   };
 
@@ -65,7 +77,7 @@ const Register = () => {
             Create your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
+            Or{" "}
             <Link
               to="/login"
               className="font-medium text-primary-600 hover:text-primary-500"
@@ -74,22 +86,25 @@ const Register = () => {
             </Link>
           </p>
         </div>
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {errors.general && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
               {errors.general}
             </div>
           )}
-          
+
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="first_name" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor={firstNameInputId}
+                  className="block text-sm font-medium text-gray-700"
+                >
                   First Name
                 </label>
                 <input
-                  id="first_name"
+                  id={firstNameInputId}
                   name="first_name"
                   type="text"
                   required
@@ -99,16 +114,21 @@ const Register = () => {
                   onChange={handleChange}
                 />
                 {errors.first_name && (
-                  <p className="mt-1 text-sm text-red-600">{errors.first_name}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.first_name}
+                  </p>
                 )}
               </div>
-              
+
               <div>
-                <label htmlFor="last_name" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor={lastNameInputId}
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Last Name
                 </label>
                 <input
-                  id="last_name"
+                  id={lastNameInputId}
                   name="last_name"
                   type="text"
                   required
@@ -118,17 +138,22 @@ const Register = () => {
                   onChange={handleChange}
                 />
                 {errors.last_name && (
-                  <p className="mt-1 text-sm text-red-600">{errors.last_name}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.last_name}
+                  </p>
                 )}
               </div>
             </div>
-            
+
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor={usernameInputId}
+                className="block text-sm font-medium text-gray-700"
+              >
                 Username
               </label>
               <input
-                id="username"
+                id={usernameInputId}
                 name="username"
                 type="text"
                 required
@@ -141,18 +166,21 @@ const Register = () => {
                 <p className="mt-1 text-sm text-red-600">{errors.username}</p>
               )}
             </div>
-            
+
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor={emailInputId}
+                className="block text-sm font-medium text-gray-700"
+              >
                 Email Address
               </label>
               <input
-                id="email"
+                id={emailInputId}
                 name="email"
                 type="email"
                 required
                 className="input-field mt-1"
-                placeholder="Enter your email"
+                placeholder="your.email@example.com"
                 value={formData.email}
                 onChange={handleChange}
               />
@@ -160,19 +188,22 @@ const Register = () => {
                 <p className="mt-1 text-sm text-red-600">{errors.email}</p>
               )}
             </div>
-            
+
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor={passwordInputId}
+                className="block text-sm font-medium text-gray-700"
+              >
                 Password
               </label>
               <div className="mt-1 relative">
                 <input
-                  id="password"
+                  id={passwordInputId}
                   name="password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   required
                   className="input-field pr-10"
-                  placeholder="Create a password"
+                  placeholder="Create a strong password"
                   value={formData.password}
                   onChange={handleChange}
                 />
@@ -192,16 +223,19 @@ const Register = () => {
                 <p className="mt-1 text-sm text-red-600">{errors.password}</p>
               )}
             </div>
-            
+
             <div>
-              <label htmlFor="password_confirm" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor={passwordConfirmInputId}
+                className="block text-sm font-medium text-gray-700"
+              >
                 Confirm Password
               </label>
               <div className="mt-1 relative">
                 <input
-                  id="password_confirm"
+                  id={passwordConfirmInputId}
                   name="password_confirm"
-                  type={showConfirmPassword ? 'text' : 'password'}
+                  type={showConfirmPassword ? "text" : "password"}
                   required
                   className="input-field pr-10"
                   placeholder="Confirm your password"
@@ -221,7 +255,9 @@ const Register = () => {
                 </button>
               </div>
               {errors.password_confirm && (
-                <p className="mt-1 text-sm text-red-600">{errors.password_confirm}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.password_confirm}
+                </p>
               )}
             </div>
           </div>
@@ -232,7 +268,7 @@ const Register = () => {
               disabled={loading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Creating account...' : 'Create account'}
+              {loading ? "Creating account..." : "Create account"}
             </button>
           </div>
         </form>

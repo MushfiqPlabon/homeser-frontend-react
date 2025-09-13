@@ -1,48 +1,63 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { 
+// AdminDashboard.jsx
+// This page component provides an administrative interface for managing the platform,
+// including an overview, order management, service management, user management,
+// and the ability to promote users to admin roles. Access is restricted to admin users.
+
+import {
   ChartBarIcon,
   ClipboardDocumentListIcon,
-  WrenchScrewdriverIcon,
   StarIcon,
+  UserPlusIcon,
   UsersIcon,
-  UserPlusIcon
-} from '@heroicons/react/24/outline';
+  WrenchScrewdriverIcon,
+} from "@heroicons/react/24/outline";
+import { useEffect, useId, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const AdminDashboard = () => {
-  const { user, isAuthenticated, isAdmin } = useAuth();
+  const { isAuthenticated, isAdmin } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState("overview");
+
+  // State for promote user functionality
+  const [userId, setUserId] = useState("");
+  const [promoteLoading, setPromoteLoading] = useState(false);
+  const [promoteMessage, setPromoteMessage] = useState("");
+
+  // Generate unique ID for the user ID input
+  const userIdInputId = useId();
 
   useEffect(() => {
     if (!isAuthenticated) {
-      navigate('/login');
+      navigate("/login");
       return;
     }
     if (!isAdmin) {
-      navigate('/dashboard');
+      navigate("/dashboard");
       return;
     }
-  }, [isAuthenticated, isAdmin]);
+  }, [isAuthenticated, isAdmin, navigate]);
 
   if (!isAuthenticated || !isAdmin) {
     return null;
   }
 
   const tabs = [
-    { id: 'overview', name: 'Overview', icon: ChartBarIcon },
-    { id: 'orders', name: 'Orders', icon: ClipboardDocumentListIcon },
-    { id: 'services', name: 'Services', icon: WrenchScrewdriverIcon },
-    { id: 'reviews', name: 'Reviews', icon: StarIcon },
-    { id: 'users', name: 'Users', icon: UsersIcon },
-    { id: 'promote', name: 'Promote User', icon: UserPlusIcon },
+    { id: "overview", name: "Overview", icon: ChartBarIcon },
+    { id: "orders", name: "Orders", icon: ClipboardDocumentListIcon },
+    { id: "services", name: "Services", icon: WrenchScrewdriverIcon },
+    { id: "reviews", name: "Reviews", icon: StarIcon },
+    { id: "users", name: "Users", icon: UsersIcon },
+    { id: "promote", name: "Promote User", icon: UserPlusIcon },
   ];
 
   const renderOverview = () => (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-gray-900">Dashboard Overview</h3>
-      
+      <h3 className="text-lg font-semibold text-gray-900">
+        Dashboard Overview
+      </h3>
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-blue-50 p-6 rounded-lg">
@@ -54,27 +69,31 @@ const AdminDashboard = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-green-50 p-6 rounded-lg">
           <div className="flex items-center">
             <WrenchScrewdriverIcon className="h-8 w-8 text-green-600" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-green-600">Active Services</p>
+              <p className="text-sm font-medium text-green-600">
+                Active Services
+              </p>
               <p className="text-2xl font-bold text-green-900">7</p>
             </div>
           </div>
         </div>
-        
+
         <div className="bg-yellow-50 p-6 rounded-lg">
           <div className="flex items-center">
             <StarIcon className="h-8 w-8 text-yellow-600" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-yellow-600">Total Reviews</p>
+              <p className="text-sm font-medium text-yellow-600">
+                Total Reviews
+              </p>
               <p className="text-2xl font-bold text-yellow-900">0</p>
             </div>
           </div>
         </div>
-        
+
         <div className="bg-purple-50 p-6 rounded-lg">
           <div className="flex items-center">
             <UsersIcon className="h-8 w-8 text-purple-600" />
@@ -85,7 +104,7 @@ const AdminDashboard = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Recent Activity */}
       <div className="bg-gray-50 rounded-lg p-6">
         <h4 className="font-semibold text-gray-900 mb-4">Recent Activity</h4>
@@ -106,7 +125,7 @@ const AdminDashboard = () => {
           <option>Cancelled</option>
         </select>
       </div>
-      
+
       <div className="bg-gray-50 rounded-lg p-8 text-center">
         <ClipboardDocumentListIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
         <p className="text-gray-600">No orders found</p>
@@ -121,9 +140,11 @@ const AdminDashboard = () => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900">Manage Services</h3>
-        <button className="btn-primary">Add New Service</button>
+        <button type="button" className="btn-primary">
+          Add New Service
+        </button>
       </div>
-      
+
       <div className="bg-gray-50 rounded-lg p-8 text-center">
         <WrenchScrewdriverIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
         <p className="text-gray-600">Service management coming soon</p>
@@ -137,7 +158,7 @@ const AdminDashboard = () => {
   const renderReviews = () => (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-gray-900">Customer Reviews</h3>
-      
+
       <div className="bg-gray-50 rounded-lg p-8 text-center">
         <StarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
         <p className="text-gray-600">No reviews yet</p>
@@ -151,7 +172,7 @@ const AdminDashboard = () => {
   const renderUsers = () => (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-gray-900">User Management</h3>
-      
+
       <div className="bg-gray-50 rounded-lg p-8 text-center">
         <UsersIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
         <p className="text-gray-600">User management coming soon</p>
@@ -163,52 +184,46 @@ const AdminDashboard = () => {
   );
 
   const renderPromoteUser = () => {
-    const [userId, setUserId] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState('');
-
     const handlePromote = async (e) => {
       e.preventDefault();
       if (!userId) return;
 
-      setLoading(true);
-      setMessage('');
+      setPromoteLoading(true);
+      setPromoteMessage("");
 
       try {
         // This would call the admin API to promote user
         // await adminAPI.promoteUser(userId);
-        setMessage('User promoted to admin successfully!');
-        setUserId('');
-      } catch (error) {
-        setMessage('Failed to promote user. Please try again.');
+        setPromoteMessage("User promoted to admin successfully!");
+        setUserId("");
+      } catch (_error) {
+        setPromoteMessage("Failed to promote user. Please try again.");
       } finally {
-        setLoading(false);
+        setPromoteLoading(false);
       }
     };
 
     return (
       <div className="space-y-6">
-        <h3 className="text-lg font-semibold text-gray-900">Promote User to Admin</h3>
-        
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <p className="text-sm text-yellow-800">
-            <strong>Warning:</strong> Only promote trusted users to admin. 
-            Admins have full access to the system and can manage all data.
-          </p>
-        </div>
+        <h3 className="text-lg font-semibold text-gray-900">
+          Promote User to Admin
+        </h3>
 
         <form onSubmit={handlePromote} className="space-y-4">
           <div>
-            <label htmlFor="userId" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor={userIdInputId}
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               User ID
             </label>
             <input
+              id={userIdInputId}
               type="number"
-              id="userId"
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
               className="input-field"
-              placeholder="Enter user ID to promote"
+              placeholder="Enter user ID"
               required
             />
             <p className="text-sm text-gray-500 mt-1">
@@ -216,41 +231,39 @@ const AdminDashboard = () => {
             </p>
           </div>
 
-          {message && (
-            <div className={`p-3 rounded-md ${
-              message.includes('successfully') 
-                ? 'bg-green-50 text-green-700 border border-green-200' 
-                : 'bg-red-50 text-red-700 border border-red-200'
-            }`}>
-              {message}
-            </div>
-          )}
-
           <button
             type="submit"
-            disabled={loading || !userId}
+            disabled={promoteLoading}
             className="btn-primary"
           >
-            {loading ? 'Promoting...' : 'Promote to Admin'}
+            {promoteLoading ? "Promoting..." : "Promote to Admin"}
           </button>
         </form>
+
+        {promoteMessage && (
+          <div
+            className={`p-4 rounded-md ${promoteMessage.includes("successfully") ? "bg-green-50/80 border border-green-200/50 text-green-800" : "bg-red-50/80 border border-red-200/50 text-red-800"} backdrop-blur-sm`}
+          >
+            {promoteMessage}
+          </div>
+        )}
       </div>
     );
   };
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'overview':
+      case "overview":
         return renderOverview();
-      case 'orders':
+      case "orders":
         return renderOrders();
-      case 'services':
+      case "services":
         return renderServices();
-      case 'reviews':
+      case "reviews":
         return renderReviews();
-      case 'users':
+      case "users":
         return renderUsers();
-      case 'promote':
+      case "promote":
         return renderPromoteUser();
       default:
         return renderOverview();
@@ -261,9 +274,7 @@ const AdminDashboard = () => {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Admin Dashboard
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
           <p className="text-gray-600 mt-2">
             Manage your household service platform
           </p>
@@ -275,12 +286,13 @@ const AdminDashboard = () => {
             <nav className="space-y-2">
               {tabs.map((tab) => (
                 <button
+                  type="button"
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`w-full flex items-center px-4 py-3 text-left rounded-lg transition-colors ${
                     activeTab === tab.id
-                      ? 'bg-primary-100 text-primary-700 border border-primary-200'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? "bg-primary-100 text-primary-700 border border-primary-200"
+                      : "text-gray-700 hover:bg-gray-100"
                   }`}
                 >
                   <tab.icon className="h-5 w-5 mr-3" />

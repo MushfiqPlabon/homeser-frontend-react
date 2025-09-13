@@ -1,47 +1,55 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { cartAPI } from '../utils/api';
-import { useAuth } from './AuthContext';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+import { cartAPI } from "../utils/api";
+import { useAuth } from "./AuthContext";
 
 const CartContext = createContext();
 
 export const useCart = () => {
   const context = useContext(CartContext);
+  // Ensure the hook is used within its Provider.
+  // If not, it indicates a developer error and throws an informative error.
   if (!context) {
-    throw new Error('useCart must be used within a CartProvider');
+    throw new Error("useCart must be used within a CartProvider");
   }
   return context;
 };
 
 export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { isAuthenticated } = useAuth();
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchCart();
-    } else {
-      setCart(null);
-    }
-  }, [isAuthenticated]);
-
-  const fetchCart = async () => {
+  const fetchCart = useCallback(async () => {
     if (!isAuthenticated) return;
-    
+
     setLoading(true);
     try {
       const response = await cartAPI.getCart();
       setCart(response.data);
     } catch (error) {
-      console.error('Failed to fetch cart:', error);
+      console.error("Failed to fetch cart:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchCart();
+    } else {
+      setCart(null); // Clear cart data if user is not authenticated.
+    }
+  }, [isAuthenticated, fetchCart]); // Dependency array: effect re-runs when 'isAuthenticated' changes.
 
   const addToCart = async (serviceId, quantity = 1) => {
     if (!isAuthenticated) {
-      throw new Error('Please login to add items to cart');
+      throw new Error("Please login to add items to cart");
     }
 
     try {
@@ -49,9 +57,9 @@ export const CartProvider = ({ children }) => {
       setCart(response.data);
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.detail || 'Failed to add to cart' 
+      return {
+        success: false,
+        error: error.response?.data?.detail || "Failed to add to cart",
       };
     }
   };
@@ -64,9 +72,9 @@ export const CartProvider = ({ children }) => {
       setCart(response.data);
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.detail || 'Failed to remove from cart' 
+      return {
+        success: false,
+        error: error.response?.data?.detail || "Failed to remove from cart",
       };
     }
   };
@@ -90,9 +98,5 @@ export const CartProvider = ({ children }) => {
     getCartTotal,
   };
 
-  return (
-    <CartContext.Provider value={value}>
-      {children}
-    </CartContext.Provider>
-  );
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 };

@@ -1,6 +1,12 @@
-import React from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ExclamationTriangleIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+// PaymentCancel.jsx
+// This page component is displayed when the user has cancelled the payment process,
+// informing them that no charges were made and offering options to return to the cart.
+
+import {
+  ArrowLeftIcon,
+  ExclamationTriangleIcon,
+} from "@heroicons/react/24/outline";
+import { Link, useParams } from "react-router-dom";
 
 const PaymentCancel = () => {
   const { orderId } = useParams();
@@ -19,12 +25,15 @@ const PaymentCancel = () => {
             Payment Cancelled
           </h2>
           <p className="text-gray-600 mb-6">
-            You have cancelled the payment process. Your order has not been placed and no charges have been made.
+            You have cancelled the payment process. Your order has not been
+            placed and no charges have been made.
           </p>
 
           {/* Order Details */}
           <div className="bg-gray-50 rounded-lg p-4 mb-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-2">Order Details</h3>
+            <h3 className="text-sm font-semibold text-gray-900 mb-2">
+              Order Details
+            </h3>
             <div className="text-sm text-gray-600 space-y-1">
               <div className="flex justify-between">
                 <span>Order ID:</span>
@@ -39,19 +48,19 @@ const PaymentCancel = () => {
 
           {/* Information */}
           <div className="bg-blue-50 rounded-lg p-4 mb-6">
-            <h3 className="text-sm font-semibold text-blue-900 mb-2">What Happened?</h3>
+            <h3 className="text-sm font-semibold text-blue-900 mb-2">
+              What Happened?
+            </h3>
             <p className="text-sm text-blue-700 text-left">
-              You chose to cancel the payment during the checkout process. 
-              Your cart items are still saved and you can complete the purchase anytime.
+              You chose to cancel the payment during the checkout process. Your
+              cart items are still saved and you can complete the purchase
+              anytime.
             </p>
           </div>
 
           {/* Action Buttons */}
           <div className="space-y-3">
-            <Link
-              to="/checkout"
-              className="w-full btn-primary"
-            >
+            <Link to="/checkout" className="w-full btn-primary">
               Complete Payment
             </Link>
             <Link
@@ -72,7 +81,8 @@ const PaymentCancel = () => {
           {/* Help */}
           <div className="mt-6 pt-6 border-t border-gray-200">
             <p className="text-sm text-gray-600">
-              Changed your mind? You can always complete your purchase later from your cart.
+              Changed your mind? You can always complete your purchase later
+              from your cart.
             </p>
           </div>
         </div>

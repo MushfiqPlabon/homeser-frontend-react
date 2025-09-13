@@ -1,6 +1,9 @@
-import React from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { XCircleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+// PaymentFail.jsx
+// This page component is displayed when a payment attempt has failed,
+// providing information about the failure and options to retry or seek support.
+
+import { ArrowPathIcon, XCircleIcon } from "@heroicons/react/24/outline";
+import { Link, useParams } from "react-router-dom";
 
 const PaymentFail = () => {
   const { orderId } = useParams();
@@ -19,12 +22,15 @@ const PaymentFail = () => {
             Payment Failed
           </h2>
           <p className="text-gray-600 mb-6">
-            Unfortunately, your payment could not be processed. Please try again or contact support if the problem persists.
+            Unfortunately, your payment could not be processed. Please try again
+            or contact support if the problem persists.
           </p>
 
           {/* Order Details */}
           <div className="bg-gray-50 rounded-lg p-4 mb-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-2">Order Details</h3>
+            <h3 className="text-sm font-semibold text-gray-900 mb-2">
+              Order Details
+            </h3>
             <div className="text-sm text-gray-600 space-y-1">
               <div className="flex justify-between">
                 <span>Order ID:</span>
@@ -39,7 +45,9 @@ const PaymentFail = () => {
 
           {/* Common Issues */}
           <div className="bg-yellow-50 rounded-lg p-4 mb-6">
-            <h3 className="text-sm font-semibold text-yellow-900 mb-2">Common Issues</h3>
+            <h3 className="text-sm font-semibold text-yellow-900 mb-2">
+              Common Issues
+            </h3>
             <ul className="text-sm text-yellow-700 text-left space-y-1">
               <li>• Insufficient funds in your account</li>
               <li>• Incorrect card details</li>
@@ -57,10 +65,7 @@ const PaymentFail = () => {
               <ArrowPathIcon className="h-4 w-4 mr-2" />
               Try Again
             </Link>
-            <Link
-              to="/cart"
-              className="w-full btn-secondary"
-            >
+            <Link to="/cart" className="w-full btn-secondary">
               Back to Cart
             </Link>
             <Link
@@ -74,8 +79,11 @@ const PaymentFail = () => {
           {/* Support */}
           <div className="mt-6 pt-6 border-t border-gray-200">
             <p className="text-sm text-gray-600">
-              Need help? Contact our support team at{' '}
-              <a href="mailto:support@homeser.com" className="text-primary-600 hover:text-primary-500">
+              Need help? Contact our support team at{" "}
+              <a
+                href="mailto:support@homeser.com"
+                className="text-primary-600 hover:text-primary-500"
+              >
                 support@homeser.com
               </a>
             </p>

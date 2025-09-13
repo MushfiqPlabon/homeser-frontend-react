@@ -1,27 +1,60 @@
+/* index.css */
+/* This is the main CSS file for the HomeSer frontend. */
+/* It imports Tailwind CSS directives and defines global styles, */
+/* as well as custom component classes using Tailwind's @apply. */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   body {
-    @apply font-sans text-gray-900 bg-gray-50;
+    @apply font-sans text-gray-900 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 min-h-screen;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+    @apply bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 backdrop-blur-sm;
   }
-  
+
   .btn-secondary {
-    @apply bg-secondary-100 hover:bg-secondary-200 text-secondary-700 font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+    @apply bg-secondary-100 hover:bg-secondary-200 text-secondary-700 font-medium py-2 px-4 rounded-lg transition-all duration-200 backdrop-blur-sm;
   }
-  
+
   .card {
-    @apply bg-white rounded-lg shadow-md p-6;
+    @apply bg-white/80 backdrop-blur-lg rounded-xl shadow-lg border border-white/20 p-6 transition-all duration-300 hover:shadow-xl;
   }
-  
+
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-xl rounded-xl shadow-lg border border-white/30 p-6;
+  }
+
   .input-field {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+    @apply w-full px-3 py-2 border border-gray-300/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/50 backdrop-blur-sm;
+  }
+
+  .navbar-glass {
+    @apply bg-white/70 backdrop-blur-xl border-b border-white/30 shadow-lg;
+  }
+
+  .modal-glass {
+    @apply bg-white/90 backdrop-blur-lg rounded-xl border border-white/30 shadow-2xl;
+  }
+
+  .sidebar-glass {
+    @apply bg-white/75 backdrop-blur-lg border-r border-white/20;
+  }
+
+  .hero-section {
+    @apply relative overflow-hidden bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10;
+  }
+
+  .translucent-bg {
+    @apply bg-white/70 backdrop-blur-sm border border-white/20;
+  }
+
+  .floating-element {
+    @apply transition-all duration-300 hover:scale-105 hover:shadow-lg;
   }
 }

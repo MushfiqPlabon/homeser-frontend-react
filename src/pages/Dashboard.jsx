@@ -1,33 +1,43 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { 
-  UserIcon, 
+// Dashboard.jsx
+// This page component serves as the user's personal dashboard, providing access to
+// their order history, reviews, profile information, and account settings.
+
+import {
   ClipboardDocumentListIcon,
+  CogIcon,
   StarIcon,
-  CogIcon
-} from '@heroicons/react/24/outline';
+  UserIcon,
+} from "@heroicons/react/24/outline";
+import { useEffect, useId, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const Dashboard = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const [activeTab, setActiveTab] = useState("orders");
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('orders');
+
+  // Generate unique IDs for form elements
+  const firstNameInputId = useId();
+  const lastNameInputId = useId();
+  const emailInputId = useId();
+  const usernameInputId = useId();
 
   useEffect(() => {
     if (!isAuthenticated) {
-      navigate('/login');
+      navigate("/login");
     }
-  }, [isAuthenticated]);
+  }, [navigate, isAuthenticated]);
 
   if (!isAuthenticated) {
     return null;
   }
 
   const tabs = [
-    { id: 'orders', name: 'My Orders', icon: ClipboardDocumentListIcon },
-    { id: 'reviews', name: 'My Reviews', icon: StarIcon },
-    { id: 'profile', name: 'Profile', icon: UserIcon },
-    { id: 'settings', name: 'Settings', icon: CogIcon },
+    { id: "orders", name: "My Orders", icon: ClipboardDocumentListIcon },
+    { id: "reviews", name: "My Reviews", icon: StarIcon },
+    { id: "profile", name: "Profile", icon: UserIcon },
+    { id: "settings", name: "Settings", icon: CogIcon },
   ];
 
   const renderOrders = () => (
@@ -58,60 +68,78 @@ const Dashboard = () => {
 
   const renderProfile = () => (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-gray-900">Profile Information</h3>
-      
+      <h3 className="text-lg font-semibold text-gray-900">
+        Profile Information
+      </h3>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label
+            htmlFor={firstNameInputId}
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
             First Name
           </label>
           <input
+            id={firstNameInputId}
             type="text"
-            value={user?.first_name || ''}
+            value={user?.first_name || ""}
             className="input-field"
             readOnly
           />
         </div>
-        
+
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label
+            htmlFor={lastNameInputId}
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
             Last Name
           </label>
           <input
+            id={lastNameInputId}
             type="text"
-            value={user?.last_name || ''}
+            value={user?.last_name || ""}
             className="input-field"
             readOnly
           />
         </div>
-        
+
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label
+            htmlFor={emailInputId}
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
             Email
           </label>
           <input
+            id={emailInputId}
             type="email"
-            value={user?.email || ''}
+            value={user?.email || ""}
             className="input-field"
             readOnly
           />
         </div>
-        
+
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label
+            htmlFor={usernameInputId}
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
             Username
           </label>
           <input
+            id={usernameInputId}
             type="text"
-            value={user?.username || ''}
+            value={user?.username || ""}
             className="input-field"
             readOnly
           />
         </div>
       </div>
-      
+
       <div className="pt-4">
-        <button className="btn-primary">
+        <button type="button" className="btn-primary">
           Edit Profile
         </button>
       </div>
@@ -121,23 +149,27 @@ const Dashboard = () => {
   const renderSettings = () => (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold text-gray-900">Account Settings</h3>
-      
+
       <div className="space-y-4">
         <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
           <div>
             <h4 className="font-medium text-gray-900">Email Notifications</h4>
-            <p className="text-sm text-gray-600">Receive updates about your orders</p>
+            <p className="text-sm text-gray-600">
+              Receive updates about your orders
+            </p>
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
             <input type="checkbox" className="sr-only peer" defaultChecked />
             <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
           </label>
         </div>
-        
+
         <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
           <div>
             <h4 className="font-medium text-gray-900">SMS Notifications</h4>
-            <p className="text-sm text-gray-600">Get SMS updates for important events</p>
+            <p className="text-sm text-gray-600">
+              Get SMS updates for important events
+            </p>
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
             <input type="checkbox" className="sr-only peer" />
@@ -145,9 +177,12 @@ const Dashboard = () => {
           </label>
         </div>
       </div>
-      
+
       <div className="pt-4 border-t border-gray-200">
-        <button className="text-red-600 hover:text-red-700 font-medium">
+        <button
+          type="button"
+          className="text-red-600 hover:text-red-700 font-medium"
+        >
           Delete Account
         </button>
       </div>
@@ -156,13 +191,13 @@ const Dashboard = () => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'orders':
+      case "orders":
         return renderOrders();
-      case 'reviews':
+      case "reviews":
         return renderReviews();
-      case 'profile':
+      case "profile":
         return renderProfile();
-      case 'settings':
+      case "settings":
         return renderSettings();
       default:
         return renderOrders();
@@ -187,12 +222,13 @@ const Dashboard = () => {
             <nav className="space-y-2">
               {tabs.map((tab) => (
                 <button
+                  type="button"
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`w-full flex items-center px-4 py-3 text-left rounded-lg transition-colors ${
                     activeTab === tab.id
-                      ? 'bg-primary-100 text-primary-700 border border-primary-200'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? "bg-primary-100 text-primary-700 border border-primary-200"
+                      : "text-gray-700 hover:bg-gray-100"
                   }`}
                 >
                   <tab.icon className="h-5 w-5 mr-3" />
