@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declaration": false,
+    "declarationMap": false,
+    "inlineSources": false,
+    "inlineSourceMap": false,
+    "sourceMap": false,
+    "removeComments": true
+  },
+  "exclude": ["node_modules", "dist"]
+}
