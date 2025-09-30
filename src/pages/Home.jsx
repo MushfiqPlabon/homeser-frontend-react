@@ -4,97 +4,123 @@ import {
   StarIcon,
   UserGroupIcon,
 } from "@heroicons/react/24/outline";
+import axios from "axios";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import LazyImage from "../components/LazyImage";
 import { servicesAPI } from "../utils/api";
+import { getFallbackImage } from "../utils/imageUtils";
 
 const Home = () => {
   const [featuredServices, setFeaturedServices] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Function to get fallback image based on service name
-  const getFallbackImage = (serviceName) => {
-    const serviceImages = {
-      "House Cleaning": "/images/service_cleaning.png",
-      "House Deep Cleaning": "/images/service_cleaning.png",
-      "Bathroom Cleaning": "/images/service_cleaning.png",
-      "Pipe Repair": "/images/service_plumbing.png",
-      "Toilet Installation": "/images/service_plumbing.png",
-      "Wiring Repair": "/images/service_electrical.png",
-      "Garden Maintenance": "/images/service_plumbing.png",
-      "Wall Painting": "/images/service_cleaning.png",
-    };
-
-    // Return specific image if service name matches, otherwise return a default image
-    return serviceImages[serviceName] || "/images/service_cleaning.png";
-  };
-
   useEffect(() => {
+    let isMounted = true;
+
     const fetchFeaturedServices = async () => {
       try {
-        const response = await servicesAPI.getServices({ limit: 4 });
-        const services = response.data.results || response.data;
-        setFeaturedServices(services.slice(0, 4)); // Get first 4 services
+        const response = await servicesAPI.getServices({ page_size: 4 });
+        // Only update state if component is still mounted
+        if (isMounted) {
+          // Extract services from the nested response data
+          let services = [];
+          if (
+            response.data?.data &&
+            Array.isArray(response.data.data.results)
+          ) {
+            services = response.data.data.results;
+          } else if (response.data && Array.isArray(response.data.results)) {
+            services = response.data.results;
+          } else if (Array.isArray(response.data)) {
+            services = response.data;
+          }
+
+          // Ensure we have an array before calling slice
+          if (Array.isArray(services)) {
+            setFeaturedServices(services.slice(0, 4)); // Get first 4 services
+          } else {
+            // If we don't have an array, set empty array
+            setFeaturedServices([]);
+          }
+        }
       } catch (error) {
-        console.error("Error fetching featured services:", error);
-        // Fallback to hardcoded services if API fails
-        setFeaturedServices([
-          {
-            id: 1,
-            image_url: "/images/service_cleaning.png",
-            name: "House Cleaning",
-            short_desc: "Professional deep cleaning services for your home",
-            price: "2500",
-          },
-          {
-            id: 2,
-            image_url: "/images/service_plumbing.png",
-            name: "Plumbing",
-            short_desc: "Expert plumbing repair and installation services",
-            price: "1200",
-          },
-          {
-            id: 3,
-            image_url: "/images/service_electrical.png",
-            name: "Electrical Work",
-            short_desc: "Safe and reliable electrical repair services",
-            price: "1500",
-          },
-          {
-            id: 4,
-            name: "Garden Maintenance",
-            short_desc: "Keep your garden beautiful and well-maintained",
-            price: "2000",
-            icon: ClockIcon,
-          },
-        ]);
+        // Only show error in console if it's not a cancellation error
+        if (!axios.isCancel(error)) {
+          console.error("Error fetching featured services:", error);
+        }
+
+        // Only update state if component is still mounted
+        if (isMounted) {
+          // Fallback to hardcoded services if API fails
+          setFeaturedServices([
+            {
+              id: 1,
+              image_url: "/images/service_cleaning.png",
+              name: "House Cleaning",
+              short_desc: "Professional deep cleaning services for your home",
+              price: "2500",
+            },
+            {
+              id: 2,
+              image_url: "/images/service_plumbing.png",
+              name: "Plumbing",
+              short_desc: "Expert plumbing repair and installation services",
+              price: "1200",
+            },
+            {
+              id: 3,
+              image_url: "/images/service_electrical.png",
+              name: "Electrical Work",
+              short_desc: "Safe and reliable electrical repair services",
+              price: "1500",
+            },
+            {
+              id: 4,
+              image_url: "/images/service_plumbing.png",
+              name: "Garden Maintenance",
+              short_desc: "Keep your garden beautiful and well-maintained",
+              price: "2000",
+            },
+          ]);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchFeaturedServices();
+
+    // Cleanup function to set isMounted to false when component unmounts
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const features = [
     {
+      id: 1,
       icon: ShieldCheckIcon,
       title: "Verified Professionals",
       description:
         "All our service providers are background-checked and verified",
     },
     {
+      id: 2,
       icon: ClockIcon,
       title: "24/7 Support",
       description: "Round-the-clock customer support for all your needs",
     },
     {
+      id: 3,
       icon: StarIcon,
       title: "Quality Guaranteed",
       description: "We ensure high-quality service with satisfaction guarantee",
     },
     {
+      id: 4,
       icon: UserGroupIcon,
       title: "Trusted by Thousands",
       description: "Join thousands of satisfied customers across Bangladesh",
@@ -103,18 +129,21 @@ const Home = () => {
 
   const testimonials = [
     {
+      id: 1,
       name: "Sarah Ahmed",
       rating: 5,
       comment: "Excellent cleaning service! Very professional and thorough.",
       service: "House Cleaning",
     },
     {
+      id: 2,
       name: "Mohammad Rahman",
       rating: 5,
       comment: "Quick and efficient plumbing repair. Highly recommended!",
       service: "Plumbing",
     },
     {
+      id: 3,
       name: "Fatima Khan",
       rating: 4,
       comment: "Great electrical work. The technician was very knowledgeable.",
@@ -396,7 +425,9 @@ const Home = () => {
                     <p className="text-sm font-medium text-gray-900">
                       {testimonial.name}
                     </p>
-                    <p className="text-sm text-gray-500">{testimonial.role}</p>
+                    <p className="text-sm text-gray-500">
+                      {testimonial.service}
+                    </p>
                   </div>
                 </div>
               </div>

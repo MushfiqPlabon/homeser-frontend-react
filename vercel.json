@@ -1,8 +1,5 @@
-// vercel.json
-// This file configures how the HomeSer React frontend is deployed on Vercel.
-// It specifies the build process (using @vercel/static-build) and defines routing rules
-// to serve the static build output from the 'dist' directory.
 {
+  "version": 2,
   "builds": [
     {
       "src": "package.json",
@@ -15,7 +12,10 @@
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/dist/$1"
+      "dest": "/index.html"
     }
-  ]
+  ],
+  "github": {
+    "silent": true
+  }
 }

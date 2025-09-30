@@ -8,20 +8,29 @@ import {
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { useCart } from "../context/CartContext";
+import { useGetCartQuery } from "../store/apiSlice";
 
 const Navbar = () => {
   // State to control the visibility of the mobile navigation menu.
   // 'isOpen' is true when the mobile menu is open, false when closed.
   const [isOpen, setIsOpen] = useState(false);
   const { user, logout, isAuthenticated, isAdmin } = useAuth();
-  const { getCartItemCount } = useCart();
+
+  const { data: cart } = useGetCartQuery(undefined, {
+    skip: !isAuthenticated // Only fetch cart data for authenticated users
+  });
   const navigate = useNavigate();
 
   const handleLogout = () => {
     logout(); // Call the logout function from AuthContext to clear user session.
     navigate("/"); // Redirect to the home page after logout.
     setIsOpen(false); // Close the mobile menu if it's open.
+  };
+
+  const getCartItemCount = () => {
+    // Only show cart item count for authenticated users
+    if (!isAuthenticated || !cart?.items) return 0;
+    return cart.items.reduce((total, item) => total + item.quantity, 0);
   };
 
   const cartItemCount = getCartItemCount();

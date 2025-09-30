@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { getToastTypeStyles } from "../utils/shared/uiComponents";
 
 const ToastNotification = ({
   message,
@@ -14,22 +15,9 @@ const ToastNotification = ({
     return () => clearTimeout(timer);
   }, [duration, onClose]);
 
-  const getTypeStyles = () => {
-    switch (type) {
-      case "success":
-        return "bg-green-50/80 border-green-200/50 text-green-800";
-      case "error":
-        return "bg-red-50/80 border-red-200/50 text-red-800";
-      case "warning":
-        return "bg-yellow-50/80 border-yellow-200/50 text-yellow-800";
-      default:
-        return "bg-blue-50/80 border-blue-200/50 text-blue-800";
-    }
-  };
-
   return (
     <div
-      className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg border backdrop-blur-lg ${getTypeStyles()} transition-all duration-300 transform hover:scale-105`}
+      className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg border backdrop-blur-lg ${getToastTypeStyles(type)} transition-all duration-300 transform hover:scale-105`}
     >
       <div className="flex items-start">
         <div className="flex-1">

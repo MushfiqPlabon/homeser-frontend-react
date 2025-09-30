@@ -7,14 +7,20 @@ import {
   CogIcon,
   StarIcon,
   UserIcon,
+  WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline";
 import { useEffect, useId, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import PermissionGuard from "../components/PermissionGuard";
 import { useAuth } from "../context/AuthContext";
+import { ordersAPI } from "../utils/api";
 
 const Dashboard = () => {
   const { isAuthenticated, user } = useAuth();
   const [activeTab, setActiveTab] = useState("orders");
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   // Generate unique IDs for form elements
@@ -22,12 +28,35 @@ const Dashboard = () => {
   const lastNameInputId = useId();
   const emailInputId = useId();
   const usernameInputId = useId();
+  const emailNotificationsCheckboxId = useId();
+  const smsNotificationsCheckboxId = useId();
 
   useEffect(() => {
     if (!isAuthenticated) {
       navigate("/login");
     }
   }, [navigate, isAuthenticated]);
+
+  // Fetch user's orders when the component mounts or when the orders tab is selected
+  useEffect(() => {
+    if (isAuthenticated && activeTab === "orders") {
+      const fetchOrders = async () => {
+        try {
+          setLoading(true);
+          setError("");
+          const response = await ordersAPI.getUserOrders();
+          setOrders(response.data.data || response.data || []);
+        } catch (err) {
+          setError("Failed to load orders");
+          console.error("Error fetching orders:", err);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchOrders();
+    }
+  }, [isAuthenticated, activeTab]);
 
   if (!isAuthenticated) {
     return null;
@@ -38,39 +67,161 @@ const Dashboard = () => {
     { id: "reviews", name: "My Reviews", icon: StarIcon },
     { id: "profile", name: "Profile", icon: UserIcon },
     { id: "settings", name: "Settings", icon: CogIcon },
+    { id: "services", name: "My Services", icon: WrenchScrewdriverIcon },
   ];
 
-  const renderOrders = () => (
-    <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900">Order History</h3>
-      <div className="bg-gray-50 rounded-lg p-8 text-center">
-        <ClipboardDocumentListIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-        <p className="text-gray-600">No orders found</p>
-        <p className="text-sm text-gray-500 mt-2">
-          Your order history will appear here once you make a purchase.
-        </p>
+  const renderOrders = () => {
+    if (loading) {
+      return (
+        <div className="flex justify-center items-center py-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <p className="text-red-800">{error}</p>
+        </div>
+      );
+    }
+
+    if (orders.length === 0) {
+      return (
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-gray-900">Order History</h3>
+          <div className="bg-gray-50 rounded-lg p-8 text-center">
+            <ClipboardDocumentListIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600">No orders found</p>
+            <p className="text-sm text-gray-500 mt-2">
+              Your order history will appear here once you make a purchase.
+            </p>
+            <div className="mt-6">
+              <button
+                type="button"
+                onClick={() => navigate("/services")}
+                className="btn-primary"
+              >
+                Browse Services
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-semibold text-gray-900">Order History</h3>
+          <button
+            type="button"
+            onClick={() => navigate("/dashboard/orders")}
+            className="text-sm text-primary-600 hover:text-primary-800 font-medium"
+          >
+            View All Orders
+          </button>
+        </div>
+        <div className="space-y-4">
+          {orders.slice(0, 5).map((order) => (
+            <div
+              key={order.id}
+              className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50/50 transition-colors"
+            >
+              <div className="flex justify-between items-start">
+                <div>
+                  <h4 className="font-medium text-gray-900">
+                    Order #{order.order_id}
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    Placed on {new Date(order.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="font-medium text-gray-900">
+                    ৳{parseFloat(order.total).toFixed(2)}
+                  </p>
+                  <span
+                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      order.status === "completed"
+                        ? "bg-green-100 text-green-800"
+                        : order.status === "cancelled"
+                          ? "bg-red-100 text-red-800"
+                          : "bg-yellow-100 text-yellow-800"
+                    }`}
+                  >
+                    {order.status.charAt(0).toUpperCase() +
+                      order.status.slice(1)}
+                  </span>
+                </div>
+              </div>
+              <div className="mt-3">
+                <p className="text-sm text-gray-600">
+                  {order.items?.length || 0} item(s)
+                </p>
+              </div>
+              <div className="mt-3 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => navigate(`/dashboard/orders/${order.id}`)}
+                  className="text-sm text-primary-600 hover:text-primary-800 font-medium"
+                >
+                  View Details
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderReviews = () => (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900">My Reviews</h3>
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold text-gray-900">My Reviews</h3>
+        <button
+          type="button"
+          onClick={() => navigate("/dashboard/reviews")}
+          className="text-sm text-primary-600 hover:text-primary-800 font-medium"
+        >
+          View All Reviews
+        </button>
+      </div>
       <div className="bg-gray-50 rounded-lg p-8 text-center">
         <StarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
         <p className="text-gray-600">No reviews yet</p>
         <p className="text-sm text-gray-500 mt-2">
           Reviews for services you've used will appear here.
         </p>
+        <div className="mt-6">
+          <button
+            type="button"
+            onClick={() => navigate("/services")}
+            className="btn-primary"
+          >
+            Browse Services
+          </button>
+        </div>
       </div>
     </div>
   );
 
   const renderProfile = () => (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-gray-900">
-        Profile Information
-      </h3>
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold text-gray-900">
+          Profile Information
+        </h3>
+        <button
+          type="button"
+          onClick={() => navigate("/dashboard/profile")}
+          className="text-sm text-primary-600 hover:text-primary-800 font-medium"
+        >
+          Edit Profile
+        </button>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
@@ -139,7 +290,11 @@ const Dashboard = () => {
       </div>
 
       <div className="pt-4">
-        <button type="button" className="btn-primary">
+        <button
+          type="button"
+          onClick={() => navigate("/dashboard/profile")}
+          className="btn-primary"
+        >
           Edit Profile
         </button>
       </div>
@@ -159,7 +314,12 @@ const Dashboard = () => {
             </p>
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" className="sr-only peer" defaultChecked />
+            <input
+              id={emailNotificationsCheckboxId}
+              type="checkbox"
+              className="sr-only peer"
+              defaultChecked
+            />
             <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
           </label>
         </div>
@@ -172,7 +332,11 @@ const Dashboard = () => {
             </p>
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" className="sr-only peer" />
+            <input
+              id={smsNotificationsCheckboxId}
+              type="checkbox"
+              className="sr-only peer"
+            />
             <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
           </label>
         </div>
@@ -199,6 +363,91 @@ const Dashboard = () => {
         return renderProfile();
       case "settings":
         return renderSettings();
+      case "services":
+        return (
+          <PermissionGuard
+            fallback={
+              <div className="text-center py-8">
+                <WrenchScrewdriverIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Service Provider Access Required
+                </h3>
+                <p className="text-gray-600">
+                  You need to be a service provider to access this section.
+                </p>
+                <div className="mt-6">
+                  <button
+                    type="button"
+                    onClick={() => navigate("/services")}
+                    className="btn-primary"
+                  >
+                    Browse Services
+                  </button>
+                </div>
+              </div>
+            }
+          >
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  My Services
+                </h3>
+                <button type="button" className="btn-primary">
+                  Add New Service
+                </button>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-blue-800">
+                  As a service provider, you can manage your services here.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <h4 className="font-medium text-gray-900">Service 1</h4>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Description of service
+                  </p>
+                  <div className="mt-2 flex space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => navigate("/dashboard/services/1")}
+                      className="text-sm text-blue-600 hover:text-blue-800"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="text-sm text-red-600 hover:text-red-800"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <h4 className="font-medium text-gray-900">Service 2</h4>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Description of service
+                  </p>
+                  <div className="mt-2 flex space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => navigate("/dashboard/services/2")}
+                      className="text-sm text-blue-600 hover:text-blue-800"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="text-sm text-red-600 hover:text-red-800"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </PermissionGuard>
+        );
       default:
         return renderOrders();
     }

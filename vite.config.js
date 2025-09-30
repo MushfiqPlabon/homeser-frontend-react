@@ -12,4 +12,27 @@ export default defineConfig({
   server: {
     port: 3000, // Set the default port to 3000
   },
+  build: {
+    outDir: 'dist',
+    sourcemap: false, // Disable sourcemaps in production for smaller bundle size
+    minify: 'esbuild', // Use esbuild for faster minification
+    manifest: false, // Don't generate manifest
+    rollupOptions: {
+      output: {
+        // Optimize for web deployment
+        manualChunks: {
+          // Split large libraries into separate chunks
+          'react-vendor': ['react', 'react-dom'],
+          'router-vendor': ['react-router-dom'],
+          'ui-vendor': ['@heroicons/react'],
+          'data-vendor': ['@reduxjs/toolkit', '@tanstack/react-query'],
+        }
+      }
+    }
+  },
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./vitest.setup.js'],
+    globals: true,
+  },
 });

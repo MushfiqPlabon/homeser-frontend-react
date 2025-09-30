@@ -3,117 +3,111 @@
 // including its description, price, and customer reviews. It also allows users
 // to add the service to their cart and submit new reviews.
 
+import { StarIcon } from "@heroicons/react/24/outline";
+// Import required icons
 import {
-  CalendarIcon,
   ShoppingCartIcon,
-  StarIcon,
-  UserIcon,
-} from "@heroicons/react/24/outline";
-import { StarIcon as StarIconSolid } from "@heroicons/react/24/solid";
-import { useCallback, useEffect, useId, useState } from "react";
+  StarIcon as StarIconSolid,
+} from "@heroicons/react/24/solid";
+import { zodResolver } from "@hookform/resolvers/zod";
+import React, { useEffect, useId, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
+import { z } from "zod";
+// Import UI components and utilities
 import LazyImage from "../components/LazyImage";
 import { useAuth } from "../context/AuthContext";
-import { useCart } from "../context/CartContext";
-import { servicesAPI } from "../utils/api";
+// Import required hooks
+import {
+  useCreateReview,
+  useDeleteReview,
+  useService,
+  useServiceReviews,
+  useUpdateReview,
+} from "../hooks/useApi";
+import { useCart } from "../hooks/useCart";
+import { renderStars } from "../utils/uiUtils.jsx";
+
+// Define review schema
+const reviewSchema = z.object({
+  rating: z
+    .number()
+    .min(1, "Rating is required")
+    .max(5, "Rating cannot be more than 5"),
+  text: z.string().min(1, "Review text is required"),
+});
 
 const ServiceDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  const { addToCart } = useCart();
 
-  // Function to get fallback image based on service name
-  const getFallbackImage = (serviceName) => {
-    const serviceImages = {
-      "House Cleaning": "/images/service_cleaning.png",
-      "House Deep Cleaning": "/images/service_cleaning.png",
-      "Bathroom Cleaning": "/images/service_cleaning.png",
-      "Pipe Repair": "/images/service_plumbing.png",
-      "Toilet Installation": "/images/service_plumbing.png",
-      "Wiring Repair": "/images/service_electrical.png",
-      "Garden Maintenance": "/images/service_plumbing.png",
-      "Wall Painting": "/images/service_cleaning.png",
-    };
+  const _quantitySelectId = useId();
+  const reviewRatingId = useId();
+  const reviewTextId = useId();
+  const editReviewTextId = useId();
 
-    // Return specific image if service name matches, otherwise return a default image
-    return serviceImages[serviceName] || "/images/service_cleaning.png";
-  };
+  // Fetch service and reviews data
+  const { data: service, isLoading: isLoadingService } = useService(id);
+  const { data: reviews } = useServiceReviews(id);
 
-  const [service, setService] = useState(null);
-  const [reviews, setReviews] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Cart functionality
+  const { addToCart, isLoading: isAddingToCart } = useCart();
+
+  // Review mutations
+  const createReview = useCreateReview();
+  const updateReview = useUpdateReview();
+  const deleteReview = useDeleteReview();
+
+  // State variables
+  const [quantity, setQuantity] = useState(1);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [editingReview, setEditingReview] = useState(null);
+  const [editReviewForm, setEditReviewForm] = useState({ rating: 5, text: "" });
+  const [submittingReview, setSubmittingReview] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  const [addingToCart, setAddingToCart] = useState(false);
-  const [quantity, setQuantity] = useState(1);
+  const [reviewsList, setReviews] = useState([]);
 
-  // Generate unique IDs for form elements
-  const quantitySelectId = useId();
-  const reviewTextId = useId();
-  const ratingId = useId();
-
-  // Review form state
-  const [showReviewForm, setShowReviewForm] = useState(false);
-  const [reviewForm, setReviewForm] = useState({
-    rating: 5,
-    text: "",
+  // Initialize form
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    reset,
+    setValue,
+  } = useForm({
+    resolver: zodResolver(reviewSchema),
+    defaultValues: {
+      rating: 5,
+      text: "",
+    },
   });
-  const [submittingReview, setSubmittingReview] = useState(false);
 
-  // Define functions before useEffect
-  const fetchServiceDetail = useCallback(async () => {
-    try {
-      const response = await servicesAPI.getService(id);
-      setService(response.data);
-      setError("");
-    } catch (err) {
-      setError("Failed to load service details.");
-      console.error("Error fetching service:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  const fetchReviews = useCallback(async () => {
-    try {
-      const response = await servicesAPI.getServiceReviews(id);
-      setReviews(response.data.results || response.data);
-    } catch (err) {
-      console.error("Error fetching reviews:", err);
-    }
-  }, [id]);
-
+  // Set reviews when they load
   useEffect(() => {
-    fetchServiceDetail();
-    fetchReviews();
-  }, [fetchReviews, fetchServiceDetail]);
+    if (reviews) {
+      setReviews(reviews);
+    }
+  }, [reviews]);
 
+  // Handle adding service to cart
   const handleAddToCart = async () => {
     if (!isAuthenticated) {
       navigate("/login", { state: { from: { pathname: `/services/${id}` } } });
       return;
     }
 
-    setAddingToCart(true);
-    setError("");
-    setSuccessMessage("");
     try {
-      const result = await addToCart(service.id, quantity);
-      if (result.success) {
-        setSuccessMessage("Service added to cart successfully!");
-      } else {
-        setError(result.error || "Failed to add to cart");
-      }
-    } catch (_err) {
-      setError("Failed to add to cart. Please try again.");
-    } finally {
-      setAddingToCart(false);
+      await addToCart({ serviceId: service.id, quantity });
+      setSuccessMessage("Service added to cart successfully!");
+    } catch (_error) {
+      setError("Failed to add service to cart");
     }
   };
 
-  const handleReviewSubmit = async (e) => {
-    e.preventDefault();
+  // Handle review submission
+  const onReviewSubmit = async (data) => {
     if (!isAuthenticated) {
       navigate("/login");
       return;
@@ -122,49 +116,42 @@ const ServiceDetail = () => {
     setSubmittingReview(true);
     setError("");
     setSuccessMessage("");
+
     try {
-      await servicesAPI.createReview(id, reviewForm);
-      setReviewForm({ rating: 5, text: "" });
+      if (editingReview) {
+        // Update existing review
+        await updateReview({ reviewId: editingReview.id, reviewData: data });
+        setSuccessMessage("Review updated successfully!");
+
+        // Update the review in the local state
+        setReviews((prevReviews) =>
+          prevReviews.map((review) =>
+            review.id === editingReview.id
+              ? { ...review, ...data, updated_at: new Date().toISOString() }
+              : review,
+          ),
+        );
+
+        setEditingReview(null);
+      } else {
+        // Create new review
+        await createReview({ serviceId: id, reviewData: data });
+        setSuccessMessage("Review submitted successfully!");
+
+        // Refetch reviews to include the new one
+        // Note: In a real app, you would likely append the new review to the list
+      }
+
+      reset();
       setShowReviewForm(false);
-      fetchReviews(); // Refresh reviews
-      fetchServiceDetail(); // Refresh service to update average rating
-      setSuccessMessage("Review submitted successfully!");
     } catch (err) {
-      const errorMessage =
-        err.response?.data?.detail || "Failed to submit review";
-      setError(errorMessage);
+      setError(err.response?.data?.message || "Failed to submit review");
     } finally {
       setSubmittingReview(false);
     }
   };
 
-  const renderStars = (rating, interactive = false, onRatingChange = null) => {
-    return (
-      <div className="flex items-center">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            key={star}
-            type={interactive ? "button" : undefined}
-            onClick={interactive ? () => onRatingChange(star) : undefined}
-            className={interactive ? "cursor-pointer" : "cursor-default"}
-          >
-            {star <= rating ? (
-              <StarIconSolid className="h-5 w-5 text-yellow-400" />
-            ) : (
-              <StarIcon className="h-5 w-5 text-gray-300" />
-            )}
-          </button>
-        ))}
-        {!interactive && (
-          <span className="ml-2 text-sm text-gray-600">
-            ({rating}) - {reviews.length} review
-            {reviews.length !== 1 ? "s" : ""}
-          </span>
-        )}
-      </div>
-    );
-  };
-
+  // Format date helper
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -173,7 +160,88 @@ const ServiceDetail = () => {
     });
   };
 
-  if (loading) {
+  // Handle edit review
+  const handleEditReview = (review) => {
+    setEditingReview(review);
+    setEditReviewForm({
+      rating: review.rating,
+      text: review.text,
+    });
+    setValue("rating", review.rating);
+    setValue("text", review.text);
+  };
+
+  // Handle update review (using RTK Query)
+  const handleUpdateReview = async (e) => {
+    e.preventDefault();
+    setSubmittingReview(true);
+    setError("");
+    setSuccessMessage("");
+
+    try {
+      await updateReview({
+        reviewId: editingReview.id,
+        reviewData: editReviewForm,
+      });
+
+      // Update the review in the reviews list
+      setReviews((prevReviews) =>
+        prevReviews.map((review) =>
+          review.id === editingReview.id
+            ? {
+                ...review,
+                ...editReviewForm,
+                updated_at: new Date().toISOString(),
+              }
+            : review,
+        ),
+      );
+
+      setEditingReview(null);
+      setEditReviewForm({ rating: 5, text: "" });
+      setSuccessMessage("Review updated successfully!");
+      reset();
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.message || "Failed to update review";
+      setError(errorMessage);
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  // Handle delete review
+  const handleDeleteReview = async (reviewId) => {
+    if (!window.confirm("Are you sure you want to delete this review?")) {
+      return;
+    }
+
+    setError("");
+    setSuccessMessage("");
+
+    try {
+      await deleteReview(reviewId);
+      setSuccessMessage("Review deleted successfully!");
+
+      // Remove the review from the reviews list
+      setReviews((prevReviews) =>
+        prevReviews.filter((review) => review.id !== reviewId),
+      );
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.message || "Failed to delete review";
+      setError(errorMessage);
+    }
+  };
+
+  // Get fallback image
+  const getFallbackImage = (serviceName) => {
+    // Create a simple fallback image based on service name
+    return `https://placehold.co/600x400?text=${encodeURIComponent(serviceName)}`;
+  };
+
+  // Loading state
+  if (isLoadingService) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600 backdrop-blur-sm bg-white/30 rounded-full p-2"></div>
@@ -181,7 +249,8 @@ const ServiceDetail = () => {
     );
   }
 
-  if (error || !service) {
+  // Error state
+  if (errorService || !service) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
         <div className="text-center card">
@@ -189,7 +258,8 @@ const ServiceDetail = () => {
             Service Not Found
           </h2>
           <p className="text-gray-600 mb-4">
-            {error || "The requested service could not be found."}
+            {errorService?.message ||
+              "The requested service could not be found."}
           </p>
           <button
             type="button"
@@ -213,13 +283,13 @@ const ServiceDetail = () => {
               <LazyImage
                 src={service.image_url}
                 alt={service.name}
-                className="w-full h-96 rounded-lg shadow-md"
+                className="w-full h-96 rounded-lg shadow-md object-cover"
               />
             ) : (
               <LazyImage
                 src={getFallbackImage(service.name)}
                 alt={service.name}
-                className="w-full h-96 rounded-lg shadow-md"
+                className="w-full h-96 rounded-lg shadow-md object-cover"
               />
             )}
           </div>
@@ -268,6 +338,7 @@ const ServiceDetail = () => {
                   value={quantity}
                   onChange={(e) => setQuantity(parseInt(e.target.value, 10))}
                   className="border border-gray-300/50 rounded-lg px-3 py-1 backdrop-blur-sm bg-white/50"
+                  autoComplete="off"
                 >
                   {[1, 2, 3, 4, 5].map((num) => (
                     <option key={num} value={num}>
@@ -280,12 +351,14 @@ const ServiceDetail = () => {
               <button
                 type="button"
                 onClick={handleAddToCart}
-                disabled={addingToCart}
-                className="w-full btn-primary flex items-center justify-center space-x-2 backdrop-blur-sm"
+                disabled={isAddingToCart}
+                className={`w-full btn-primary flex items-center justify-center space-x-2 backdrop-blur-sm ${
+                  isAddingToCart ? "opacity-70 cursor-not-allowed" : ""
+                }`}
               >
                 <ShoppingCartIcon className="h-5 w-5" />
                 <span>
-                  {addingToCart ? "Adding to Cart..." : "Add to Cart"}
+                  {isAddingToCart ? "Adding to Cart..." : "Add to Cart"}
                 </span>
               </button>
             </div>
@@ -302,12 +375,15 @@ const ServiceDetail = () => {
         <div className="card">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900">
-              Reviews ({reviews.length})
+              Reviews ({reviewsList.length})
             </h2>
             {isAuthenticated && (
               <button
                 type="button"
-                onClick={() => setShowReviewForm(!showReviewForm)}
+                onClick={() => {
+                  setShowReviewForm(!showReviewForm);
+                  setEditingReview(null); // Reset editing state when toggling form
+                }}
                 className="btn-primary backdrop-blur-sm"
               >
                 Write a Review
@@ -330,54 +406,175 @@ const ServiceDetail = () => {
           )}
 
           {/* Review Form */}
-          {showReviewForm && (
+          {showReviewForm && !editingReview && (
             <form
-              onSubmit={handleReviewSubmit}
+              onSubmit={handleSubmit(onReviewSubmit)}
               className="mb-8 p-4 bg-gray-50/50 rounded-lg backdrop-blur-sm border border-gray-200/50"
             >
               <h3 className="text-lg font-semibold mb-4">Write Your Review</h3>
 
               <div className="mb-4">
-                <label
-                  htmlFor={ratingId}
+                <div
+                  htmlFor={reviewRatingId}
                   className="block text-sm font-medium text-gray-700 mb-2"
                 >
                   Rating
-                </label>
-                {renderStars(reviewForm.rating, true, (rating) =>
-                  setReviewForm({ ...reviewForm, rating }),
+                </div>
+                <Controller
+                  name="rating"
+                  control={control}
+                  render={({ field: { value, onChange } }) => (
+                    <div className="flex items-center">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => {
+                            onChange(star);
+                            setValue("rating", star);
+                          }}
+                          className="cursor-pointer"
+                          aria-label={`Rate ${star} star${star !== 1 ? "s" : ""}`}
+                        >
+                          {star <= value ? (
+                            <StarIconSolid className="h-6 w-6 text-yellow-400" />
+                          ) : (
+                            <StarIcon className="h-6 w-6 text-gray-300" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                />
+                {errors.rating && (
+                  <p className="text-sm text-red-600 mt-1">
+                    {errors.rating.message}
+                  </p>
                 )}
               </div>
 
-              <label
-                htmlFor={reviewTextId}
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Review
-              </label>
-              <textarea
-                id={reviewTextId}
-                value={reviewForm.text}
-                onChange={(e) =>
-                  setReviewForm({ ...reviewForm, text: e.target.value })
-                }
-                rows={4}
-                className="input-field"
-                placeholder="Share your experience with this service..."
-                required
-              />
+              <div className="mb-4">
+                <label
+                  htmlFor={reviewTextId}
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Review
+                </label>
+                <Controller
+                  name="text"
+                  control={control}
+                  render={({ field }) => (
+                    <textarea
+                      {...field}
+                      id={reviewTextId}
+                      rows="4"
+                      className="w-full border border-gray-300/50 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent backdrop-blur-sm bg-white/50"
+                      placeholder="Share your experience with this service..."
+                    />
+                  )}
+                />
+                {errors.text && (
+                  <p className="text-sm text-red-600 mt-1">
+                    {errors.text.message}
+                  </p>
+                )}
+              </div>
 
               <div className="flex space-x-4">
                 <button
                   type="submit"
                   disabled={submittingReview}
-                  className="btn-primary backdrop-blur-sm"
+                  className={`btn-primary backdrop-blur-sm ${
+                    submittingReview ? "opacity-70 cursor-not-allowed" : ""
+                  }`}
                 >
                   {submittingReview ? "Submitting..." : "Submit Review"}
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowReviewForm(false)}
+                  onClick={() => {
+                    setShowReviewForm(false);
+                    reset();
+                  }}
+                  className="btn-secondary backdrop-blur-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* Edit Review Form */}
+          {editingReview && (
+            <form
+              onSubmit={handleUpdateReview}
+              className="mb-8 p-4 bg-blue-50/50 rounded-lg backdrop-blur-sm border border-blue-200/50"
+            >
+              <h3 className="text-lg font-semibold mb-4">Edit Your Review</h3>
+
+              <div className="mb-4">
+                <div className="block text-sm font-medium text-gray-700 mb-2">
+                  Rating
+                </div>
+                <div className="flex items-center">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() =>
+                        setEditReviewForm({ ...editReviewForm, rating: star })
+                      }
+                      className="cursor-pointer"
+                      aria-label={`Rate ${star} star${star !== 1 ? "s" : ""}`}
+                    >
+                      {star <= editReviewForm.rating ? (
+                        <StarIconSolid className="h-6 w-6 text-yellow-400" />
+                      ) : (
+                        <StarIcon className="h-6 w-6 text-gray-300" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <label
+                  htmlFor={editReviewTextId}
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Review
+                </label>
+                <textarea
+                  id={editReviewTextId}
+                  value={editReviewForm.text}
+                  onChange={(e) =>
+                    setEditReviewForm({
+                      ...editReviewForm,
+                      text: e.target.value,
+                    })
+                  }
+                  rows="4"
+                  className="w-full border border-gray-300/50 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent backdrop-blur-sm bg-white/50"
+                  placeholder="Update your review..."
+                />
+              </div>
+
+              <div className="flex space-x-4">
+                <button
+                  type="submit"
+                  disabled={submittingReview}
+                  className={`btn-primary backdrop-blur-sm ${
+                    submittingReview ? "opacity-70 cursor-not-allowed" : ""
+                  }`}
+                >
+                  {submittingReview ? "Updating..." : "Update Review"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingReview(null);
+                    setEditReviewForm({ rating: 5, text: "" });
+                  }}
                   className="btn-secondary backdrop-blur-sm"
                 >
                   Cancel
@@ -388,39 +585,54 @@ const ServiceDetail = () => {
 
           {/* Reviews List */}
           <div className="space-y-6">
-            {reviews.length === 0 ? (
+            {reviewsList.length === 0 ? (
               <p className="text-gray-500 text-center py-8">
                 No reviews yet. Be the first to review this service!
               </p>
             ) : (
-              reviews.map((review) => (
+              reviewsList.map((review) => (
                 <div
                   key={review.id}
-                  className="border-b border-gray-200/50 pb-6 last:border-b-0"
+                  className="border-b border-gray-200/50 pb-6 last:border-0 last:pb-0"
                 >
-                  <div className="flex items-start space-x-4">
-                    <div className="flex-shrink-0">
-                      <div className="w-10 h-10 bg-gray-300/50 rounded-full flex items-center justify-center backdrop-blur-sm">
-                        <UserIcon className="h-6 w-6 text-gray-600" />
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="font-medium text-gray-900">
+                        {review.user?.first_name ||
+                          review.user?.username ||
+                          "Anonymous"}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {formatDate(review.created_at)}
                       </div>
                     </div>
-
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold text-gray-900">
-                          {review.user_name || "Anonymous"}
-                        </h4>
-                        <div className="flex items-center space-x-2">
-                          {renderStars(review.rating)}
-                          <span className="text-sm text-gray-500 flex items-center">
-                            <CalendarIcon className="h-4 w-4 mr-1" />
-                            {formatDate(review.created_at)}
-                          </span>
+                    {isAuthenticated &&
+                      user &&
+                      (user.id === review.user_id || user.is_staff) && (
+                        <div className="flex space-x-2">
+                          <button
+                            type="button"
+                            onClick={() => handleEditReview(review)}
+                            className="text-sm text-blue-600 hover:text-blue-900"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteReview(review.id)}
+                            className="text-sm text-red-600 hover:text-red-900"
+                          >
+                            Delete
+                          </button>
                         </div>
-                      </div>
-                      <p className="text-gray-700">{review.text}</p>
-                    </div>
+                      )}
                   </div>
+
+                  <div className="mt-2 flex items-center">
+                    {renderStars(review.rating)}
+                  </div>
+
+                  <p className="mt-2 text-gray-700">{review.text}</p>
                 </div>
               ))
             )}

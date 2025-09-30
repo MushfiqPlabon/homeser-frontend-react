@@ -7,49 +7,60 @@ import {
   ShieldCheckIcon,
   TruckIcon,
 } from "@heroicons/react/24/outline";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useId, useState } from "react";
+import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
+import { z } from "zod";
 import LazyImage from "../components/LazyImage";
 import { useAuth } from "../context/AuthContext";
-import { useCart } from "../context/CartContext";
-import { ordersAPI } from "../utils/api";
+import { useCheckoutMutation, useGetCartQuery } from "../store/apiSlice";
+import { getFallbackImage } from "../utils/imageUtils";
+
+const schema = z.object({
+  name: z.string().min(1, "Full name is required"),
+  phone: z.string().min(1, "Phone number is required"),
+  address: z.string().min(1, "Service address is required"),
+  payment_method: z.string().min(1, "Payment method is required"),
+});
 
 const Checkout = () => {
+  const nameId = useId();
+  const phoneId = useId();
+  const addressId = useId();
+  const paymentMethodId = useId();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+  } = useForm({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      name: "",
+      phone: "",
+      address: "",
+      payment_method: "sslcommerz",
+    },
+  });
   const { isAuthenticated, user } = useAuth();
-  const { cart, fetchCart } = useCart();
   const navigate = useNavigate();
 
-  // Function to get fallback image based on service name
-  const getFallbackImage = (serviceName) => {
-    const serviceImages = {
-      "House Cleaning": "/images/service_cleaning.png",
-      "House Deep Cleaning": "/images/service_cleaning.png",
-      "Bathroom Cleaning": "/images/service_cleaning.png",
-      "Pipe Repair": "/images/service_plumbing.png",
-      "Toilet Installation": "/images/service_plumbing.png",
-      "Wiring Repair": "/images/service_electrical.png",
-      "Garden Maintenance": "/images/service_plumbing.png",
-      "Wall Painting": "/images/service_cleaning.png",
-    };
+  // Use RTK Query to get cart data only for authenticated users
+  const { data: cartData, isLoading, isError } = useGetCartQuery(undefined, {
+    skip: !isAuthenticated // Only fetch cart data for authenticated users
+  });
+  const [checkout, { isLoading: isCheckoutLoading }] = useCheckoutMutation();
 
-    // Return specific image if service name matches, otherwise return a default image
-    return serviceImages[serviceName] || "/images/service_cleaning.png";
-  };
-
-  const [formData, setFormData] = useState({
+  const [_formData, setFormData] = useState({
     name: "",
     phone: "",
     address: "",
     payment_method: "sslcommerz",
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  // Generate unique IDs for form elements
-  const nameInputId = useId();
-  const phoneInputId = useId();
-  const addressTextareaId = useId();
-  const sslcommerzRadioId = useId();
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -57,51 +68,59 @@ const Checkout = () => {
       return;
     }
 
-    fetchCart();
-
-    // Pre-fill form with user data
+    // Pre-fill form with user data if available
     if (user) {
+      const fullName =
+        `${user.first_name || ""} ${user.last_name || ""}`.trim();
       setFormData((prev) => ({
         ...prev,
-        name: `${user.first_name} ${user.last_name}`.trim(),
+        name: fullName || user.username || "",
       }));
+      setValue("name", fullName || user.username || "");
     }
-  }, [isAuthenticated, user, fetchCart, navigate]);
+  }, [isAuthenticated, user, navigate, setValue]);
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+  // Update form values when cartData changes
+  useEffect(() => {
+    if (cartData) {
+      // Update the react-hook-form values if needed
+    }
+  }, [cartData]);
+
+  const _handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!cart?.items?.length) {
+  const onSubmit = async (data) => {
+    const cartItems = cartData?.items || [];
+    if (!cartItems?.length) {
       setError("Your cart is empty");
       return;
     }
 
-    setLoading(true);
-    setError("");
-
     try {
-      const response = await ordersAPI.checkout(formData);
-      const { gateway_url, _sessionkey, _order_id } = response.data;
+      const checkoutData = {
+        customer_name: data.name,
+        customer_phone: data.phone,
+        customer_address: data.address,
+        payment_method: data.payment_method,
+      };
 
-      if (gateway_url) {
-        // Redirect to SSLCOMMERZ payment gateway
-        window.location.href = gateway_url;
+      const response = await checkout(checkoutData);
+
+      if (response.data?.gateway_url) {
+        window.location.href = response.data.gateway_url;
       } else {
-        setError("Payment gateway URL not received");
+        setError(response.error?.message || "Payment gateway URL not received");
       }
     } catch (err) {
       const errorMessage =
         err.response?.data?.error || "Checkout failed. Please try again.";
       setError(errorMessage);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -109,7 +128,40 @@ const Checkout = () => {
     return null; // Will redirect in useEffect
   }
 
-  const cartItems = cart?.items || [];
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
+        <div className="text-center card">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-lg">Loading checkout...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
+        <div className="text-center card">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">
+            Error Loading Cart
+          </h2>
+          <p className="text-gray-600 mb-4">
+            Unable to load your cart. Please try again.
+          </p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="btn-primary"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const cartItems = cartData?.items || [];
   const isEmpty = cartItems.length === 0;
 
   if (isEmpty) {
@@ -134,6 +186,10 @@ const Checkout = () => {
     );
   }
 
+  const subtotal = cartData?.subtotal || 0;
+  const tax = cartData?.tax || 0;
+  const total = cartData?.total || 0;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50 py-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -151,7 +207,7 @@ const Checkout = () => {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               {/* Customer Information */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
@@ -160,56 +216,76 @@ const Checkout = () => {
                 </h3>
 
                 <div className="space-y-4">
-                  <label
-                    htmlFor={nameInputId}
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    Full Name *
-                  </label>
-                  <input
-                    id={nameInputId}
-                    type="text"
-                    name="name"
-                    required
-                    className="input-field"
-                    placeholder="Enter your full name"
-                    value={formData.name}
-                    onChange={handleChange}
-                  />
+                  <div>
+                    <label
+                      htmlFor={nameId}
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Full Name *
+                    </label>
+                    <input
+                      id={nameId}
+                      type="text"
+                      autoComplete="name"
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                        errors.name ? "border-red-500" : "border-gray-300/50"
+                      } backdrop-blur-sm bg-white/50`}
+                      placeholder="Enter your full name"
+                      {...register("name")}
+                    />
+                    {errors.name && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.name.message}
+                      </p>
+                    )}
+                  </div>
 
-                  <label
-                    htmlFor={phoneInputId}
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    Phone Number *
-                  </label>
-                  <input
-                    id={phoneInputId}
-                    type="tel"
-                    name="phone"
-                    required
-                    className="input-field"
-                    placeholder="Enter your phone number"
-                    value={formData.phone}
-                    onChange={handleChange}
-                  />
+                  <div>
+                    <label
+                      htmlFor={phoneId}
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Phone Number *
+                    </label>
+                    <input
+                      id={phoneId}
+                      type="tel"
+                      autoComplete="tel"
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                        errors.phone ? "border-red-500" : "border-gray-300/50"
+                      } backdrop-blur-sm bg-white/50`}
+                      placeholder="Enter your phone number"
+                      {...register("phone")}
+                    />
+                    {errors.phone && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.phone.message}
+                      </p>
+                    )}
+                  </div>
 
-                  <label
-                    htmlFor={addressTextareaId}
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    Service Address *
-                  </label>
-                  <textarea
-                    id={addressTextareaId}
-                    name="address"
-                    rows={3}
-                    required
-                    className="input-field"
-                    placeholder="Enter your complete service address"
-                    value={formData.address}
-                    onChange={handleChange}
-                  />
+                  <div>
+                    <label
+                      htmlFor={addressId}
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Service Address *
+                    </label>
+                    <textarea
+                      id={addressId}
+                      rows={3}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                        errors.address ? "border-red-500" : "border-gray-300/50"
+                      } backdrop-blur-sm bg-white/50`}
+                      placeholder="Enter your complete service address"
+                      {...register("address")}
+                    />
+                    {errors.address && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.address.message}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -223,15 +299,13 @@ const Checkout = () => {
                 <div className="space-y-3">
                   <div className="flex items-center p-4 border border-gray-200/50 rounded-lg bg-primary-50/50 backdrop-blur-sm">
                     <input
-                      id={sslcommerzRadioId}
+                      id={paymentMethodId}
                       type="radio"
-                      name="payment_method"
                       value="sslcommerz"
-                      checked={formData.payment_method === "sslcommerz"}
-                      onChange={handleChange}
+                      {...register("payment_method")}
                       className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
                     />
-                    <label htmlFor={sslcommerzRadioId} className="ml-3 flex-1">
+                    <label htmlFor={paymentMethodId} className="ml-3 flex-1">
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-sm font-medium text-gray-900">
@@ -268,10 +342,12 @@ const Checkout = () => {
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={loading}
-                className="w-full btn-primary py-3 text-lg backdrop-blur-sm"
+                disabled={isCheckoutLoading}
+                className={`w-full btn-primary py-3 text-lg backdrop-blur-sm ${
+                  isCheckoutLoading ? "opacity-70 cursor-not-allowed" : ""
+                }`}
               >
-                {loading ? "Processing..." : `Pay ৳${cart?.total || 0}`}
+                {isCheckoutLoading ? "Processing..." : `Pay ৳${total}`}
               </button>
             </form>
           </div>
@@ -324,16 +400,16 @@ const Checkout = () => {
             <div className="border-t border-gray-200/50 pt-4 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Subtotal:</span>
-                <span className="font-semibold">৳{cart.subtotal}</span>
+                <span className="font-semibold">৳{subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Tax (5%):</span>
-                <span className="font-semibold">৳{cart.tax}</span>
+                <span className="font-semibold">৳{tax.toFixed(2)}</span>
               </div>
               <div className="border-t border-gray-300/50 pt-2">
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total:</span>
-                  <span className="text-primary-600">৳{cart.total}</span>
+                  <span className="text-primary-600">৳{total.toFixed(2)}</span>
                 </div>
               </div>
             </div>

@@ -1,43 +1,38 @@
-// Cart.jsx
-// This page component displays the user's shopping cart, allowing them to view
-// selected services, adjust quantities, remove items, and proceed to checkout.
+// Cart.jsx - using RTK Query hooks
+// This component displays the user's cart and allows modification of items
 
 import { ShoppingBagIcon } from "@heroicons/react/24/outline";
-import { useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import LazyImage from "../components/LazyImage";
 import { useAuth } from "../context/AuthContext";
-import { useCart } from "../context/CartContext";
+import { useCart } from "../hooks/useCart";
+import { getFallbackImage } from "../utils/imageUtils";
+import { renderStars } from "../utils/uiUtils.jsx";
 
 const Cart = () => {
-  const { isAuthenticated } = useAuth();
-  const { cart, loading, removeFromCart, addToCart, fetchCart } = useCart();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
-  // Function to get fallback image based on service name
-  const getFallbackImage = (serviceName) => {
-    const serviceImages = {
-      "House Cleaning": "/images/service_cleaning.png",
-      "House Deep Cleaning": "/images/service_cleaning.png",
-      "Bathroom Cleaning": "/images/service_cleaning.png",
-      "Pipe Repair": "/images/service_plumbing.png",
-      "Toilet Installation": "/images/service_plumbing.png",
-      "Wiring Repair": "/images/service_electrical.png",
-      "Garden Maintenance": "/images/service_plumbing.png",
-      "Wall Painting": "/images/service_cleaning.png",
-    };
+  const {
+    items,
+    subtotal,
+    tax,
+    total,
+    isLoading,
+    isError,
+    error,
+    removeFromCart,
+    updateCartItemQuantity,
+  } = useCart();
 
-    // Return specific image if service name matches, otherwise return a default image
-    return serviceImages[serviceName] || "/images/service_cleaning.png";
-  };
+  const [updatingQuantities, setUpdatingQuantities] = useState({});
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate("/login", { state: { from: { pathname: "/cart" } } });
-      return;
-    }
-    fetchCart();
-  }, [isAuthenticated, fetchCart, navigate]);
+  // Check authentication
+  if (!isAuthenticated) {
+    navigate("/login", { state: { from: { pathname: "/cart" } } });
+    return null;
+  }
 
   const handleRemoveItem = async (serviceId) => {
     if (
@@ -49,88 +44,88 @@ const Cart = () => {
     }
   };
 
-  const _handleUpdateQuantity = async (serviceId, currentQuantity, change) => {
+  const handleUpdateQuantity = async (serviceId, currentQuantity, change) => {
     const newQuantity = currentQuantity + change;
     if (newQuantity <= 0) {
       handleRemoveItem(serviceId);
       return;
     }
 
-    // For any quantity change, remove the item and re-add with the new quantity
-    // This simplifies the logic and ensures consistency
-    await removeFromCart(serviceId);
-    await addToCart(serviceId, newQuantity);
+    await handleQuantityChange(serviceId, newQuantity);
   };
 
-  if (!isAuthenticated) {
-    return null; // Will redirect in useEffect
-  }
+  const handleQuantityChange = async (serviceId, newQuantity) => {
+    // Validate quantity
+    if (newQuantity < 1) newQuantity = 1;
+    if (newQuantity > 10) newQuantity = 10;
 
-  // Render star ratings
-  const renderStars = (rating) => {
-    return (
-      <div className="flex">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <svg
-            key={star}
-            className={`w-4 h-4 ${star <= rating ? "text-yellow-400" : "text-gray-300"}`}
-            fill="currentColor"
-            viewBox="0 0 20 20"
-            role="img"
-            aria-label={`${rating} out of 5 stars`}
-          >
-            <title>{star <= rating ? `${star} star` : "Empty star"}</title>
-            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-          </svg>
-        ))}
-      </div>
-    );
+    // Set loading state for this item
+    setUpdatingQuantities((prev) => ({ ...prev, [serviceId]: true }));
+
+    try {
+      await updateCartItemQuantity({ serviceId, quantity: newQuantity });
+    } catch (error) {
+      console.error("Failed to update quantity:", error);
+    } finally {
+      // Clear loading state for this item
+      setUpdatingQuantities((prev) => ({ ...prev, [serviceId]: false }));
+    }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600 backdrop-blur-sm bg-white/30 rounded-full p-2"></div>
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     );
   }
 
-  const cartItems = cart?.items || [];
-  const isEmpty = cartItems.length === 0;
+  if (isError) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-red-500 mb-4">
+          Failed to load cart: {error?.message || "Unknown error"}
+        </div>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="btn-primary"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  const cartItems = items || [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="card">
-          {/* Header */}
-          <div className="px-6 py-4 border-b border-gray-200/50">
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-              <ShoppingBagIcon className="h-8 w-8 mr-3 text-primary-600" />
-              Shopping Cart
-            </h1>
-          </div>
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="flex items-center space-x-3 mb-8">
+          <ShoppingBagIcon className="h-8 w-8 text-primary-600" />
+          <h1 className="text-3xl font-bold text-gray-900">Your Cart</h1>
+        </div>
 
-          {isEmpty ? (
-            /* Empty Cart */
-            <div className="px-6 py-12 text-center">
-              <img
-                src="/images/empty_cart_illustration.png"
-                alt="Empty Cart"
-                className="h-48 w-48 mx-auto mb-4 object-contain" // Increased size for illustration
-              />
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden backdrop-blur-sm bg-white/80 border border-gray-200/50">
+          {cartItems.length === 0 ? (
+            <div className="text-center py-12">
+              <ShoppingBagIcon className="mx-auto h-16 w-16 text-gray-400" />
+              <h3 className="mt-4 text-lg font-medium text-gray-900">
                 Your cart is empty
-              </h2>
-              <p className="text-gray-600 mb-6">
-                Looks like you haven't added any services to your cart yet.
+              </h3>
+              <p className="mt-1 text-gray-500">
+                Start adding some services to your cart
               </p>
-              <button
-                type="button"
-                onClick={() => navigate("/services")}
-                className="btn-primary"
-              >
-                Browse Services
-              </button>
+              <div className="mt-6">
+                <button
+                  type="button"
+                  onClick={() => navigate("/services")}
+                  className="btn-primary"
+                >
+                  Browse Services
+                </button>
+              </div>
             </div>
           ) : (
             <>
@@ -183,19 +178,60 @@ const Cart = () => {
                           </span>
                         </div>
 
-                        {/* Price */}
-                        <div className="flex items-center justify-between">
-                          <span className="text-2xl font-bold text-primary-600">
-                            ৳{item.price}
+                        {/* Quantity Controls */}
+                        <div className="flex items-center justify-between mt-2">
+                          <div className="flex items-center space-x-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleUpdateQuantity(
+                                  item.service.id,
+                                  item.quantity,
+                                  -1,
+                                )
+                              }
+                              disabled={updatingQuantities[item.service.id]}
+                              className="btn-secondary w-8 h-8 flex items-center justify-center disabled:opacity-50"
+                            >
+                              -
+                            </button>
+                            <span className="w-10 text-center font-medium">
+                              {item.quantity}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleUpdateQuantity(
+                                  item.service.id,
+                                  item.quantity,
+                                  1,
+                                )
+                              }
+                              disabled={updatingQuantities[item.service.id]}
+                              className="btn-secondary w-8 h-8 flex items-center justify-center disabled:opacity-50"
+                            >
+                              +
+                            </button>
+                          </div>
+
+                          <span className="text-lg font-semibold text-gray-900">
+                            ৳{item.total_price}
                           </span>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveItem(item.service.id)}
-                            className="btn-primary"
-                          >
-                            Remove
-                          </button>
                         </div>
+                      </div>
+
+                      {/* Price */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-lg font-bold text-primary-600">
+                          ৳{(item.service.price * item.quantity).toFixed(2)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveItem(item.service.id)}
+                          className="btn-primary"
+                        >
+                          Remove
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -207,16 +243,20 @@ const Cart = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Subtotal:</span>
-                    <span className="font-semibold">৳{cart.subtotal}</span>
+                    <span className="font-semibold">
+                      ৳{subtotal.toFixed(2)}
+                    </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Tax (5%):</span>
-                    <span className="font-semibold">৳{cart.tax}</span>
+                    <span className="font-semibold">৳{tax.toFixed(2)}</span>
                   </div>
                   <div className="border-t border-gray-300/50 pt-2">
                     <div className="flex justify-between text-lg font-bold">
                       <span>Total:</span>
-                      <span className="text-primary-600">৳{cart.total}</span>
+                      <span className="text-primary-600">
+                        ৳{total.toFixed(2)}
+                      </span>
                     </div>
                   </div>
                 </div>

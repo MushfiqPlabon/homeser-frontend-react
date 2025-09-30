@@ -4,66 +4,54 @@
 
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { useId, useState } from "react";
+import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
+import { z } from "zod";
 import { useAuth } from "../context/AuthContext";
 
-const Register = () => {
-  const [formData, setFormData] = useState({
-    first_name: "",
-    last_name: "",
-    username: "",
-    email: "",
-    password: "",
-    password_confirm: "",
+const schema = z
+  .object({
+    first_name: z.string().min(1, "First name is required"),
+    last_name: z.string().min(1, "Last name is required"),
+    username: z.string().min(1, "Username is required"),
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    password_confirm: z.string(),
+  })
+  .refine((data) => data.password === data.password_confirm, {
+    message: "Passwords don't match",
+    path: ["password_confirm"],
   });
-  const [errors, setErrors] = useState({});
+
+const Register = () => {
+  const firstNameId = useId();
+  const lastNameId = useId();
+  const usernameId = useId();
+  const emailId = useId();
+  const passwordId = useId();
+  const passwordConfirmId = useId();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm(schema);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Generate unique IDs for form elements
-  const firstNameInputId = useId();
-  const lastNameInputId = useId();
-  const usernameInputId = useId();
-  const emailInputId = useId();
-  const passwordInputId = useId();
-  const passwordConfirmInputId = useId();
-
-  const { register } = useAuth();
+  const { register: registerUser } = useAuth();
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-    // Clear error when user starts typing
-    if (errors[e.target.name]) {
-      setErrors({
-        ...errors,
-        [e.target.name]: "",
-      });
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const onSubmit = async (data) => {
     setLoading(true);
-    setErrors({});
 
-    // Client-side validation
-    if (formData.password !== formData.password_confirm) {
-      setErrors({ password_confirm: "Passwords don't match" });
-      setLoading(false);
-      return;
-    }
-
-    const result = await register(formData);
+    const result = await registerUser(data);
 
     if (result.success) {
       navigate("/");
     } else {
-      setErrors(result.error);
+      // Handle server-side errors
     }
 
     setLoading(false);
@@ -87,10 +75,10 @@ const Register = () => {
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           {errors.general && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
-              {errors.general}
+              {errors.general.message}
             </div>
           )}
 
@@ -98,48 +86,44 @@ const Register = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label
-                  htmlFor={firstNameInputId}
+                  htmlFor={firstNameId}
                   className="block text-sm font-medium text-gray-700"
                 >
                   First Name
                 </label>
                 <input
-                  id={firstNameInputId}
-                  name="first_name"
+                  id={firstNameId}
                   type="text"
-                  required
+                  autoComplete="given-name"
                   className="input-field mt-1"
                   placeholder="First name"
-                  value={formData.first_name}
-                  onChange={handleChange}
+                  {...register("first_name")}
                 />
                 {errors.first_name && (
                   <p className="mt-1 text-sm text-red-600">
-                    {errors.first_name}
+                    {errors.first_name.message}
                   </p>
                 )}
               </div>
 
               <div>
                 <label
-                  htmlFor={lastNameInputId}
+                  htmlFor={lastNameId}
                   className="block text-sm font-medium text-gray-700"
                 >
                   Last Name
                 </label>
                 <input
-                  id={lastNameInputId}
-                  name="last_name"
+                  id={lastNameId}
                   type="text"
-                  required
+                  autoComplete="family-name"
                   className="input-field mt-1"
                   placeholder="Last name"
-                  value={formData.last_name}
-                  onChange={handleChange}
+                  {...register("last_name")}
                 />
                 {errors.last_name && (
                   <p className="mt-1 text-sm text-red-600">
-                    {errors.last_name}
+                    {errors.last_name.message}
                   </p>
                 )}
               </div>
@@ -147,65 +131,63 @@ const Register = () => {
 
             <div>
               <label
-                htmlFor={usernameInputId}
+                htmlFor={usernameId}
                 className="block text-sm font-medium text-gray-700"
               >
                 Username
               </label>
               <input
-                id={usernameInputId}
-                name="username"
+                id={usernameId}
                 type="text"
-                required
+                autoComplete="username"
                 className="input-field mt-1"
                 placeholder="Choose a username"
-                value={formData.username}
-                onChange={handleChange}
+                {...register("username")}
               />
               {errors.username && (
-                <p className="mt-1 text-sm text-red-600">{errors.username}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.username.message}
+                </p>
               )}
             </div>
 
             <div>
               <label
-                htmlFor={emailInputId}
+                htmlFor={emailId}
                 className="block text-sm font-medium text-gray-700"
               >
                 Email Address
               </label>
               <input
-                id={emailInputId}
-                name="email"
+                id={emailId}
                 type="email"
-                required
+                autoComplete="email"
                 className="input-field mt-1"
                 placeholder="your.email@example.com"
-                value={formData.email}
-                onChange={handleChange}
+                {...register("email")}
               />
               {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.email.message}
+                </p>
               )}
             </div>
 
             <div>
               <label
-                htmlFor={passwordInputId}
+                htmlFor={passwordId}
                 className="block text-sm font-medium text-gray-700"
               >
                 Password
               </label>
               <div className="mt-1 relative">
                 <input
-                  id={passwordInputId}
-                  name="password"
+                  id={passwordId}
                   type={showPassword ? "text" : "password"}
-                  required
+                  autoComplete="new-password"
                   className="input-field pr-10"
                   placeholder="Create a strong password"
-                  value={formData.password}
-                  onChange={handleChange}
+                  {...register("password")}
                 />
                 <button
                   type="button"
@@ -220,27 +202,27 @@ const Register = () => {
                 </button>
               </div>
               {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.password.message}
+                </p>
               )}
             </div>
 
             <div>
               <label
-                htmlFor={passwordConfirmInputId}
+                htmlFor={passwordConfirmId}
                 className="block text-sm font-medium text-gray-700"
               >
                 Confirm Password
               </label>
               <div className="mt-1 relative">
                 <input
-                  id={passwordConfirmInputId}
-                  name="password_confirm"
+                  id={passwordConfirmId}
                   type={showConfirmPassword ? "text" : "password"}
-                  required
+                  autoComplete="new-password"
                   className="input-field pr-10"
                   placeholder="Confirm your password"
-                  value={formData.password_confirm}
-                  onChange={handleChange}
+                  {...register("password_confirm")}
                 />
                 <button
                   type="button"
@@ -256,7 +238,7 @@ const Register = () => {
               </div>
               {errors.password_confirm && (
                 <p className="mt-1 text-sm text-red-600">
-                  {errors.password_confirm}
+                  {errors.password_confirm.message}
                 </p>
               )}
             </div>

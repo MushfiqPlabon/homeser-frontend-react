@@ -1,20 +1,9 @@
-const LoadingSpinner = ({ size = "md", message = "", fullscreen = false }) => {
-  const getSizeClasses = () => {
-    switch (size) {
-      case "sm":
-        return "h-8 w-8 border-2";
-      case "lg":
-        return "h-16 w-16 border-4";
-      case "xl":
-        return "h-24 w-24 border-4";
-      default:
-        return "h-12 w-12 border-2";
-    }
-  };
+import { getSpinnerSizeClasses } from "../utils/shared/uiComponents";
 
+const LoadingSpinner = ({ size = "md", message = "", fullscreen = false }) => {
   const spinner = (
     <div
-      className={`${getSizeClasses()} animate-spin rounded-full border-b-2 border-primary-600 backdrop-blur-sm bg-white/30 rounded-full p-1`}
+      className={`${getSpinnerSizeClasses(size)} animate-spin rounded-full border-b-2 border-primary-600 backdrop-blur-sm bg-white/30 rounded-full p-1`}
     ></div>
   );
 

@@ -138,10 +138,38 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
 
-# React-specific ignores
+# React/Vite build output
 /build
 /dist
 .DS_Store
 
 # parcel-bundler cache
 .cache
+
+# Vercel build output
+.vercel/
+
+# Local VSCode settings
+.vscode/settings.json
+
+# Browser extension development files
+dev/
+
+# Local environment files that might contain sensitive data
+.env.local
+.env.production
+.env.development
+.env.test
+
+# Database files
+*.db
+*.db-journal
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

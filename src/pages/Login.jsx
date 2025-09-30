@@ -4,53 +4,40 @@
 
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { useId, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { Link, useNavigate } from "react-router-dom";
+import { z } from "zod";
 import { useAuth } from "../context/AuthContext";
 
+const schema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
+});
+
 const Login = () => {
-  const [formData, setFormData] = useState({
-    username: "",
-    password: "",
-  });
-  const [errors, setErrors] = useState({});
+  const emailId = useId();
+  const passwordId = useId();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm(schema);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Generate unique IDs for form elements
-  const usernameInputId = useId();
-  const passwordInputId = useId();
-
   const { login } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
-  const from = location.state?.from?.pathname || "/";
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-    // Clear error when user starts typing
-    if (errors[e.target.name]) {
-      setErrors({
-        ...errors,
-        [e.target.name]: "",
-      });
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const onSubmit = async (data) => {
     setLoading(true);
-    setErrors({});
 
-    const result = await login(formData);
+    const result = await login({ email: data.email, password: data.password });
 
     if (result.success) {
-      navigate(from, { replace: true });
+      navigate("/");
     } else {
-      setErrors({ general: result.error });
+      // Handle server-side errors
     }
 
     setLoading(false);
@@ -74,53 +61,51 @@ const Login = () => {
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           {errors.general && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
-              {errors.general}
+              {errors.general.message}
             </div>
           )}
 
-          <div className="space-y-4">
+          <div className="rounded-md shadow-sm -space-y-px">
             <div>
               <label
-                htmlFor={usernameInputId}
+                htmlFor={emailId}
                 className="block text-sm font-medium text-gray-700"
               >
-                Email or Username
+                Email address
               </label>
               <input
-                id={usernameInputId}
-                name="username"
-                type="text"
-                required
+                id={emailId}
+                type="email"
+                autoComplete="email"
                 className="input-field mt-1"
-                placeholder="Enter your email or username"
-                value={formData.username}
-                onChange={handleChange}
+                placeholder="Email address"
+                {...register("email")}
               />
-              {errors.username && (
-                <p className="mt-1 text-sm text-red-600">{errors.username}</p>
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.email.message}
+                </p>
               )}
             </div>
 
-            <div>
+            <div className="pt-4">
               <label
-                htmlFor={passwordInputId}
+                htmlFor={passwordId}
                 className="block text-sm font-medium text-gray-700"
               >
                 Password
               </label>
               <div className="mt-1 relative">
                 <input
-                  id={passwordInputId}
-                  name="password"
+                  id={passwordId}
                   type={showPassword ? "text" : "password"}
-                  required
+                  autoComplete="current-password"
                   className="input-field pr-10"
-                  placeholder="Enter your password"
-                  value={formData.password}
-                  onChange={handleChange}
+                  placeholder="Password"
+                  {...register("password")}
                 />
                 <button
                   type="button"
@@ -135,22 +120,21 @@ const Login = () => {
                 </button>
               </div>
               {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.password.message}
+                </p>
               )}
             </div>
           </div>
 
           <div className="flex items-center justify-between">
             <div className="text-sm">
-              <button
-                type="button"
+              <Link
+                to="/forgot-password"
                 className="font-medium text-primary-600 hover:text-primary-500"
-                onClick={() =>
-                  alert("Password reset functionality would go here")
-                }
               >
                 Forgot your password?
-              </button>
+              </Link>
             </div>
           </div>
 

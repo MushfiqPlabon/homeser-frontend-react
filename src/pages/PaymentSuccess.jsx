@@ -3,18 +3,82 @@
 // and providing next steps for the user.
 
 import { CheckCircleIcon, PrinterIcon } from "@heroicons/react/24/outline";
-import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { useGetUserOrdersQuery } from "../store/apiSlice";
 
 const PaymentSuccess = () => {
   const { orderId } = useParams();
-  const [_orderDetails, _setOrderDetails] = useState(null);
 
-  useEffect(() => {
-    // In a real app, you would fetch order details from the backend
-    // For now, we'll show a success message
-    console.log("Payment successful for order:", orderId);
-  }, [orderId]);
+  const {
+    data: userOrders,
+    isLoading,
+    isError,
+    error,
+  } = useGetUserOrdersQuery();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full">
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+            <p className="mt-4 text-lg">Loading order details...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full">
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-6">
+              <CheckCircleIcon className="h-10 w-10 text-red-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Error Loading Order
+            </h2>
+            <p className="text-gray-600 mb-6">
+              {error?.message || "Failed to load order details"}
+            </p>
+            <Link to="/dashboard" className="w-full btn-primary">
+              Go to Dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Find the specific order by ID
+  const orderDetails = userOrders?.find(
+    (order) => order.id === parseInt(orderId, 10),
+  );
+
+  if (!orderDetails) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full">
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-6">
+              <CheckCircleIcon className="h-10 w-10 text-red-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Order Not Found
+            </h2>
+            <p className="text-gray-600 mb-6">
+              The requested order could not be found.
+            </p>
+            <Link to="/dashboard" className="w-full btn-primary">
+              Go to Dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -42,15 +106,25 @@ const PaymentSuccess = () => {
             <div className="text-sm text-gray-600 space-y-1">
               <div className="flex justify-between">
                 <span>Order ID:</span>
-                <span className="font-medium">#{orderId}</span>
+                <span className="font-medium">#{orderDetails.id}</span>
               </div>
               <div className="flex justify-between">
                 <span>Status:</span>
-                <span className="font-medium text-green-600">Confirmed</span>
+                <span className="font-medium text-green-600">
+                  {orderDetails.status}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Payment:</span>
-                <span className="font-medium text-green-600">Paid</span>
+                <span className="font-medium text-green-600">
+                  {orderDetails.payment_status}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Total:</span>
+                <span className="font-medium">
+                  ৳{orderDetails.total?.toFixed(2) || "0.00"}
+                </span>
               </div>
             </div>
           </div>
@@ -70,11 +144,17 @@ const PaymentSuccess = () => {
 
           {/* Action Buttons */}
           <div className="space-y-3">
-            <Link to="/dashboard" className="w-full btn-primary">
-              View Order in Dashboard
+            <Link
+              to={`/dashboard/orders/${orderDetails.id}`}
+              className="w-full btn-primary inline-block text-center"
+            >
+              View Order Details
             </Link>
-            <Link to="/services" className="w-full btn-secondary">
-              Continue Shopping
+            <Link
+              to="/dashboard"
+              className="w-full btn-secondary inline-block text-center"
+            >
+              View Dashboard
             </Link>
             <button
               type="button"

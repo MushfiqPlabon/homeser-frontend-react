@@ -2,12 +2,14 @@
 // This page component displays a list of available services, allowing users to search,
 // filter, and sort them. It fetches service data from the backend API.
 
-import { MagnifyingGlassIcon, StarIcon } from "@heroicons/react/24/outline";
-import { StarIcon as StarIconSolid } from "@heroicons/react/24/solid";
-import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import axios from "axios";
+import { useCallback, useEffect, useId, useState } from "react";
 import { Link } from "react-router-dom";
 import LazyImage from "../components/LazyImage";
 import { servicesAPI } from "../utils/api";
+import { getFallbackImage } from "../utils/imageUtils";
+import { renderStars } from "../utils/uiUtils.jsx";
 
 const Services = () => {
   const [services, setServices] = useState([]);
@@ -19,25 +21,9 @@ const Services = () => {
   const [sortBy, setSortBy] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Generate unique ID for the sort select element
+  // Generate unique IDs for form elements
   const sortBySelectId = useId();
-
-  // Function to get fallback image based on service name
-  const getFallbackImage = (serviceName) => {
-    const serviceImages = {
-      "House Cleaning": "/images/service_cleaning.png",
-      "House Deep Cleaning": "/images/service_cleaning.png",
-      "Bathroom Cleaning": "/images/service_cleaning.png",
-      "Pipe Repair": "/images/service_plumbing.png",
-      "Toilet Installation": "/images/service_plumbing.png",
-      "Wiring Repair": "/images/service_electrical.png",
-      "Garden Maintenance": "/images/service_plumbing.png",
-      "Wall Painting": "/images/service_cleaning.png",
-    };
-
-    // Return specific image if service name matches, otherwise return a default image
-    return serviceImages[serviceName] || "/images/service_cleaning.png";
-  };
+  const searchInputId = useId();
 
   const fetchServices = useCallback(async () => {
     try {
@@ -48,91 +34,56 @@ const Services = () => {
       if (sortBy) {
         params.ordering = sortBy;
       }
+      if (searchTerm) {
+        params.search = searchTerm;
+      }
 
       const response = await servicesAPI.getServices(params);
-      const data = response.data;
+      const _data = response.data;
+
+      // Handle the nested response structure from the backend
+      const actualData = response.data?.data || response.data;
 
       // Handle both paginated and non-paginated responses
-      if (data.results) {
-        setServices(data.results);
-        setHasNextPage(!!data.next);
-        setHasPreviousPage(!!data.previous);
+      if (actualData.results) {
+        setServices(actualData.results);
+        setHasNextPage(!!actualData.next);
+        setHasPreviousPage(!!actualData.previous);
       } else {
-        setServices(data);
+        setServices(actualData);
         setHasNextPage(false);
         setHasPreviousPage(false);
       }
     } catch (err) {
-      console.error("Error fetching services:", err);
-      setError("Failed to load services. Please try again later.");
+      // Check if it's an axios cancellation
+      if (axios.isCancel?.(err)) {
+        // Request was cancelled, which is expected behavior
+      } else if (
+        err.code === "ERR_NETWORK" ||
+        err.message === "Network Error"
+      ) {
+        // Network error or request aborted
+      } else {
+        setError("Failed to load services. Please try again later.");
+      }
+      setLoading(false);
     } finally {
       setLoading(false);
     }
-  }, [page, sortBy]);
+  }, [page, sortBy, searchTerm]);
 
   useEffect(() => {
-    console.log("API Base URL:", import.meta.env.VITE_API_BASE_URL);
+    // Log the API base URL for debugging purposes
+    // console.log("API Base URL:", import.meta.env.VITE_API_BASE_URL);
+  }, []);
+
+  // Fetch services when page, sortBy, or searchTerm changes
+  useEffect(() => {
     fetchServices();
   }, [fetchServices]);
 
-  // Filter services based on search term
-  const filteredServices = useMemo(() => {
-    if (!searchTerm) return services;
-
-    const term = searchTerm.toLowerCase();
-    return services.filter(
-      (service) =>
-        service.name.toLowerCase().includes(term) ||
-        service.short_desc.toLowerCase().includes(term),
-    );
-  }, [services, searchTerm]);
-
-  // Render star ratings
-  const renderStars = (rating, isInteractive = false, onRatingClick = null) => {
-    const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 >= 0.5;
-
-    for (let i = 1; i <= 5; i++) {
-      if (i <= fullStars) {
-        stars.push(
-          <StarIconSolid
-            key={i}
-            className={`h-5 w-5 ${isInteractive ? "text-yellow-400 cursor-pointer" : "text-yellow-400"}`}
-            onClick={() => isInteractive && onRatingClick && onRatingClick(i)}
-          />,
-        );
-      } else if (i === fullStars + 1 && hasHalfStar) {
-        stars.push(
-          <div key={i} className="relative">
-            <StarIcon
-              className={`h-5 w-5 ${isInteractive ? "text-yellow-400 cursor-pointer" : "text-yellow-400"}`}
-              onClick={() =>
-                isInteractive && onRatingClick && onRatingClick(i - 0.5)
-              }
-            />
-            <StarIconSolid
-              className={`h-5 w-5 absolute top-0 left-0 ${isInteractive ? "text-yellow-400 cursor-pointer" : "text-yellow-400"}`}
-              style={{ clipPath: "polygon(0 0, 50% 0, 50% 100%, 0 100%)" }}
-              onClick={() =>
-                isInteractive && onRatingClick && onRatingClick(i - 0.5)
-              }
-            />
-          </div>,
-        );
-      } else {
-        stars.push(
-          <StarIcon
-            key={i}
-            className={`h-5 w-5 ${isInteractive ? "text-yellow-400 cursor-pointer" : "text-gray-300"}`}
-            onClick={() => isInteractive && onRatingClick && onRatingClick(i)}
-          />,
-        );
-      }
-    }
-
-    return <div className="flex">{stars}</div>;
-  };
+  // Filter services based on search term (now handled by backend)
+  const filteredServices = services;
 
   const handleNextPage = () => {
     if (hasNextPage) {
@@ -173,11 +124,14 @@ const Services = () => {
           <div className="relative flex-1 max-w-md">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
+              id={searchInputId}
+              name="search"
               type="text"
               placeholder="Search services..."
               className="w-full pl-10 pr-4 py-2 border border-gray-300/50 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/50 backdrop-blur-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              autoComplete="off"
             />
           </div>
 
@@ -191,6 +145,7 @@ const Services = () => {
             </label>
             <select
               id={sortBySelectId}
+              name="sortBy"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
               className="border border-gray-300/50 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/50 backdrop-blur-sm"
