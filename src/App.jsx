@@ -87,4 +87,5 @@ function App() {
   );
 }
 
+// Vercel deployment trigger - fixes MIME type issues
 export default App;

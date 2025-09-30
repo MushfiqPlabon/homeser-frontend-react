@@ -11,35 +11,22 @@
   ],
   "routes": [
     {
-      "src": "/assets/(.*)",
+      "src": "/assets/(.*)\\.js$",
       "headers": {
-        "cache-control": "public, immutable, max-age=31536000",
-        "content-type": "application/javascript"
-      }
+        "content-type": "application/javascript; charset=utf-8"
+      },
+      "dest": "/assets/$1.js"
+    },
+    {
+      "src": "/assets/(.*)\\.css$",
+      "headers": {
+        "content-type": "text/css"
+      },
+      "dest": "/assets/$1.css"
     },
     {
       "src": "/(.*)",
       "dest": "/index.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/assets/(.*)\\.(js|css)$",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/javascript; charset=utf-8"
-        }
-      ]
-    },
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        }
-      ]
     }
   ],
   "github": {
