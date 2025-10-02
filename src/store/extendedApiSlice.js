@@ -85,6 +85,108 @@ export const extendedApiSlice = createApi({
       invalidatesTags: ["ExtendedService", "Service"],
     }),
 
+    // Services Endpoints
+    getServices: builder.query({
+      query: (params) => ({
+        url: "/services/",
+        params,
+      }),
+      providesTags: ["Service"],
+    }),
+
+    getService: builder.query({
+      query: (id) => `/services/${id}/`,
+      providesTags: (_result, _error, id) => [{ type: "Service", id }],
+    }),
+
+    createService: builder.mutation({
+      query: (serviceData) => ({
+        url: "/services/",
+        method: "POST",
+        body: serviceData,
+      }),
+      invalidatesTags: ["Service"],
+    }),
+
+    updateService: builder.mutation({
+      query: ({ id, serviceData }) => ({
+        url: `/services/${id}/`,
+        method: "PUT",
+        body: serviceData,
+      }),
+      invalidatesTags: (_result, _error, { id }) => [
+        { type: "Service", id },
+        "Service",
+      ],
+    }),
+
+    partialUpdateService: builder.mutation({
+      query: ({ id, serviceData }) => ({
+        url: `/services/${id}/`,
+        method: "PATCH",
+        body: serviceData,
+      }),
+      invalidatesTags: (_result, _error, { id }) => [
+        { type: "Service", id },
+        "Service",
+      ],
+    }),
+
+    deleteService: builder.mutation({
+      query: (id) => ({
+        url: `/services/${id}/`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Service"],
+    }),
+
+    // Service Reviews Endpoints
+    getServiceReviews: builder.query({
+      query: (serviceId) => `/services/${serviceId}/reviews/`,
+      providesTags: ["Review"],
+    }),
+
+    createServiceReview: builder.mutation({
+      query: ({ serviceId, reviewData }) => ({
+        url: `/services/${serviceId}/reviews/`,
+        method: "POST",
+        body: reviewData,
+      }),
+      invalidatesTags: ["Review"],
+    }),
+
+    updateServiceReview: builder.mutation({
+      query: ({ reviewId, reviewData }) => ({
+        url: `/reviews/${reviewId}/`,
+        method: "PUT",
+        body: reviewData,
+      }),
+      invalidatesTags: (_result, _error, { reviewId }) => [
+        { type: "Review", reviewId },
+        "Review",
+      ],
+    }),
+
+    partialUpdateServiceReview: builder.mutation({
+      query: ({ reviewId, reviewData }) => ({
+        url: `/reviews/${reviewId}/`,
+        method: "PATCH",
+        body: reviewData,
+      }),
+      invalidatesTags: (_result, _error, { reviewId }) => [
+        { type: "Review", reviewId },
+        "Review",
+      ],
+    }),
+
+    deleteServiceReview: builder.mutation({
+      query: (reviewId) => ({
+        url: `/reviews/${reviewId}/`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Review"],
+    }),
+
     // Extended Categories Endpoints
     getExtendedCategories: builder.query({
       query: () => "/ext/categories/",
@@ -235,6 +337,12 @@ export const extendedApiSlice = createApi({
       providesTags: ["Order"],
     }),
 
+    getUserOrders: builder.query({
+      query: () => "/user/orders/",
+      providesTags: ["Order"],
+    }),
+
+
     updateOrderStatus: builder.mutation({
       query: ({ id, statusData }) => ({
         url: `/admin/orders/${id}/status/`,
@@ -299,11 +407,64 @@ export const extendedApiSlice = createApi({
       }),
       providesTags: ["Review"], // Using same tag as other review-related data
     }),
+
+    // Payment Analytics Endpoints
+    getPaymentAnalytics: builder.query({
+      query: (params) => ({
+        url: "/payments/analytics/",
+        params,
+      }),
+      providesTags: ["Payment"],
+    }),
+
+    // Payment Refund Endpoints
+    initiateRefund: builder.mutation({
+      query: ({ paymentId, reason }) => ({
+        url: `/payments/refund/${paymentId}/`,
+        method: "POST",
+        body: { reason },
+      }),
+      invalidatesTags: ["Payment"],
+    }),
+
+    // Payment Dispute Endpoints
+    initiateDispute: builder.mutation({
+      query: ({ paymentId, reason }) => ({
+        url: `/payments/dispute/${paymentId}/`,
+        method: "POST",
+        body: { reason },
+      }),
+      invalidatesTags: ["Payment"],
+    }),
   }),
 });
 
 // Export hooks for all endpoints
 export const {
+  // Services
+  useGetServicesQuery,
+  useGetServiceQuery,
+  useGetServiceReviewsQuery,
+  useCreateServiceReviewMutation,
+
+  // Categories
+  useGetCategoriesQuery,
+
+  // Users
+  useGetUsersQuery,
+  useGetAdminUserQuery,
+  useUpdateAdminUserMutation,
+  useDeleteAdminUserMutation,
+
+  // Reviews
+  useGetReviewsQuery,
+  useGetReviewQuery,
+  useCreateReviewMutation,
+  useUpdateReviewMutation,
+  usePartialUpdateReviewMutation,
+  useDeleteReviewMutation,
+  useGetUserReviewsQuery,
+
   // Extended Services
   useGetExtendedServicesQuery,
   useGetExtendedServiceQuery,
@@ -320,23 +481,13 @@ export const {
   usePartialUpdateExtendedCategoryMutation,
   useDeleteExtendedCategoryMutation,
 
-  // Reviews
-  useGetReviewsQuery,
-  useGetReviewQuery,
-  useCreateReviewMutation,
-  useUpdateReviewMutation,
-  usePartialUpdateReviewMutation,
-  useDeleteReviewMutation,
-
   // Admin
   usePromoteUserMutation,
   useGetAdminUsersQuery,
-  useGetAdminUserQuery,
-  useUpdateAdminUserMutation,
-  useDeleteAdminUserMutation,
 
   // Orders
   useGetAdminOrdersQuery,
+  useGetUserOrdersQuery,
   useUpdateOrderStatusMutation,
 
   // Payments

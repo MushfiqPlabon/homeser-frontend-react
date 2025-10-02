@@ -25,7 +25,7 @@ export default defineConfig({
           'react-vendor': ['react', 'react-dom'],
           'router-vendor': ['react-router-dom'],
           'ui-vendor': ['@heroicons/react'],
-          'data-vendor': ['@reduxjs/toolkit', '@tanstack/react-query'],
+          'data-vendor': ['@reduxjs/toolkit'],
         }
       }
     }

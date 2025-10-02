@@ -25,25 +25,25 @@ api.interceptors.request.use(
   (config) => {
     // List of public endpoints that should NOT have authentication headers
     const publicEndpoints = [
-      '/services/',
-      '/categories/',
-      '/services',
-      '/categories'
+      "/services/",
+      "/categories/",
+      "/services",
+      "/categories",
     ];
-    
+
     // Check if this is a public endpoint
-    const isPublicEndpoint = publicEndpoints.some(endpoint => 
-      config.url.includes(endpoint)
+    const isPublicEndpoint = publicEndpoints.some((endpoint) =>
+      config.url.includes(endpoint),
     );
-    
+
     // Only add auth header if it's not a public endpoint and token exists
-    if (!isPublicEndpoint && typeof localStorage !== 'undefined') {
-      const token = localStorage.getItem('access_token');
+    if (!isPublicEndpoint && typeof localStorage !== "undefined") {
+      const token = localStorage.getItem("access_token");
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
     }
-    
+
     return config;
   },
   (error) => {
@@ -82,8 +82,8 @@ api.interceptors.response.use(
           // Update the authorization header with the new token
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           // Store token in localStorage
-          if (typeof localStorage !== 'undefined') {
-            localStorage.setItem('access_token', newToken);
+          if (typeof localStorage !== "undefined") {
+            localStorage.setItem("access_token", newToken);
           }
           // Retry the original request with the new token
           return api(originalRequest);
@@ -100,8 +100,8 @@ api.interceptors.response.use(
         // Update the authorization header with the new token
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         // Store token in localStorage
-        if (typeof localStorage !== 'undefined') {
-          localStorage.setItem('access_token', newToken);
+        if (typeof localStorage !== "undefined") {
+          localStorage.setItem("access_token", newToken);
         }
         // Retry the original request with the new token
         return api(originalRequest);
@@ -212,7 +212,10 @@ export const ordersAPI = {
 export const cartAPI = {
   getCart: () => {
     // Only fetch cart for authenticated users
-    const token = typeof localStorage !== 'undefined' ? localStorage.getItem("access_token") : null;
+    const token =
+      typeof localStorage !== "undefined"
+        ? localStorage.getItem("access_token")
+        : null;
     if (!token) {
       // Return a rejected promise for unauthenticated users
       return Promise.reject(new Error("User not authenticated"));
@@ -221,7 +224,10 @@ export const cartAPI = {
   },
   addToCart: (serviceId, quantity) => {
     // Only add to cart for authenticated users
-    const token = typeof localStorage !== 'undefined' ? localStorage.getItem("access_token") : null;
+    const token =
+      typeof localStorage !== "undefined"
+        ? localStorage.getItem("access_token")
+        : null;
     if (!token) {
       return Promise.reject(new Error("User not authenticated"));
     }
@@ -229,7 +235,10 @@ export const cartAPI = {
   },
   removeFromCart: (serviceId) => {
     // Only remove from cart for authenticated users
-    const token = typeof localStorage !== 'undefined' ? localStorage.getItem("access_token") : null;
+    const token =
+      typeof localStorage !== "undefined"
+        ? localStorage.getItem("access_token")
+        : null;
     if (!token) {
       return Promise.reject(new Error("User not authenticated"));
     }
@@ -237,7 +246,10 @@ export const cartAPI = {
   },
   updateCartItemQuantity: (serviceId, quantity) => {
     // Only update cart item quantity for authenticated users
-    const token = typeof localStorage !== 'undefined' ? localStorage.getItem("access_token") : null;
+    const token =
+      typeof localStorage !== "undefined"
+        ? localStorage.getItem("access_token")
+        : null;
     if (!token) {
       return Promise.reject(new Error("User not authenticated"));
     }

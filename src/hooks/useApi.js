@@ -1,137 +1,106 @@
+// Import all RTK Query hooks from extendedApiSlice in a single statement
 import {
-  adminAPI,
-  categoriesAPI,
-  ordersAPI,
-  paymentAPI,
-  reviewsAPI,
-  searchAPI,
-  servicesAPI,
-  usersAPI,
-} from "../utils/api";
-import { useApi, useSubmit } from "./useGenericApi";
+  useAdvancedSearchQuery,
+  useCreateExtendedCategoryMutation,
+  useCreateExtendedServiceMutation,
+  useCreateReviewMutation,
+  useDeleteExtendedCategoryMutation,
+  useDeleteExtendedServiceMutation,
+  useDeleteReviewMutation,
+  useGetAdminOrdersQuery,
+  useGetAdminUserQuery,
+  useGetAdminUsersQuery,
+  useGetCategoriesQuery,
+  useGetExtendedCategoriesQuery,
+  useGetExtendedCategoryQuery,
+  useGetExtendedServiceQuery,
+  useGetExtendedServicesQuery,
+  useGetPaymentAnalyticsQuery,
+  useGetPopularSearchesQuery,
+  useGetReviewQuery,
+  useGetSearchAnalyticsQuery,
+  useGetServiceQuery,
+  useGetServiceReviewsQuery,
+  useGetServicesQuery,
+  useGetUserOrdersQuery,
+  useGetUsersQuery,
+  useInitiateDisputeMutation,
+  useInitiateRefundMutation,
+  usePromoteUserMutation,
+  useUpdateAdminUserMutation,
+  useUpdateExtendedCategoryMutation,
+  useUpdateExtendedServiceMutation,
+  useUpdateOrderStatusMutation,
+  useUpdateReviewMutation,
+} from "../store/extendedApiSlice";
 
 // Search Hooks
 export const useAdvancedSearch = (params, options) =>
-  useApi(
-    ["advancedSearch", params],
-    () => searchAPI.advancedSearch(params),
-    options,
-  );
+  useAdvancedSearchQuery(params, options);
 
 export const useSearchAnalytics = (params, options) =>
-  useApi(
-    ["searchAnalytics", params],
-    () => searchAPI.getAnalytics(params),
-    options,
-  );
+  useGetSearchAnalyticsQuery(params, options);
 
 export const usePopularSearches = (params, options) =>
-  useApi(
-    ["popularSearches", params],
-    () => searchAPI.getPopularSearches(params),
-    options,
-  );
+  useGetPopularSearchesQuery(params, options);
 
 // Review Hooks
 export const useReview = (reviewId, options) =>
-  useApi(["review", reviewId], () => reviewsAPI.getReview(reviewId), {
+  useGetReviewQuery(reviewId, {
     enabled: !!reviewId,
     ...options,
   });
 
-export const useCreateReview = (options) =>
-  useSubmit(
-    ({ serviceId, reviewData }) =>
-      reviewsAPI.createReview(serviceId, reviewData),
-    ["reviews"],
-    options,
-  );
+export const useCreateReview = (options) => useCreateReviewMutation(options);
 
-export const useUpdateReview = (options) =>
-  useSubmit(
-    ({ reviewId, reviewData }) => reviewsAPI.updateReview(reviewId, reviewData),
-    ["reviews"],
-    options,
-  );
+export const useUpdateReview = (options) => useUpdateReviewMutation(options);
 
-export const useDeleteReview = (options) =>
-  useSubmit(
-    (reviewId) => reviewsAPI.deleteReview(reviewId),
-    ["reviews"],
-    options,
-  );
+export const useDeleteReview = (options) => useDeleteReviewMutation(options);
 
 // Service Hooks
 export const useServices = (params, options) =>
-  useApi(["services", params], () => servicesAPI.getServices(params), options);
+  useGetServicesQuery(params, options);
 
 export const useService = (id, options) =>
-  useApi(["service", id], () => servicesAPI.getService(id), {
+  useGetServiceQuery(id, {
     enabled: !!id,
     ...options,
   });
 
 export const useServiceReviews = (serviceId, options) =>
-  useApi(
-    ["serviceReviews", serviceId],
-    () => servicesAPI.getServiceReviews(serviceId),
-    { enabled: !!serviceId, ...options },
-  );
+  useGetServiceReviewsQuery(serviceId, {
+    enabled: !!serviceId,
+    ...options,
+  });
 
 // Order Hooks
 export const useOrders = (params, options) =>
-  useApi(["orders", params], () => ordersAPI.getOrders(params), options);
+  useGetAdminOrdersQuery(params, options);
 
 export const useUserOrders = (options) =>
-  useApi(["userOrders"], () => ordersAPI.getUserOrders(), options);
+  useGetUserOrdersQuery(undefined, options);
 
 // User Hooks
-export const useUsers = (params, options) =>
-  useApi(["users", params], () => usersAPI.getUsers(params), options);
+export const useUsers = (params, options) => useGetUsersQuery(params, options);
 
 // Category Hooks
 export const useCategories = (options) =>
-  useApi(["categories"], () => categoriesAPI.getCategories(), options);
+  useGetCategoriesQuery(undefined, options);
 
 // Admin Hooks
 export const useAdminServices = (params, options) =>
-  useApi(
-    ["adminServices", params],
-    () => adminAPI.getServices(params),
-    options,
-  );
+  useGetExtendedServicesQuery(params, options);
 
 export const useCreateService = (options) =>
-  useSubmit(
-    (serviceData) => adminAPI.createService(serviceData),
-    ["adminServices", "services"],
-    options,
-  );
+  useCreateExtendedServiceMutation(options);
 
 export const useUpdateService = (options) =>
-  useSubmit(
-    ({ serviceId, serviceData }) =>
-      adminAPI.updateService(serviceId, serviceData),
-    ["adminServices", "services"],
-    options,
-  );
+  useUpdateExtendedServiceMutation(options);
 
 export const useDeleteService = (options) =>
-  useSubmit(
-    (serviceId) => adminAPI.deleteService(serviceId),
-    ["adminServices", "services"],
-    options,
-  );
+  useDeleteExtendedServiceMutation(options);
 
 // Extended Services Hooks (using RTK Query)
-import {
-  useCreateExtendedServiceMutation,
-  useDeleteExtendedServiceMutation,
-  useGetExtendedServiceQuery,
-  useGetExtendedServicesQuery,
-  useUpdateExtendedServiceMutation,
-} from "../store/extendedApiSlice";
-
 export const useExtendedServices = (params, options) =>
   useGetExtendedServicesQuery(params, options);
 
@@ -148,14 +117,6 @@ export const useDeleteExtendedService = (options) =>
   useDeleteExtendedServiceMutation(options);
 
 // Extended Categories Hooks (using RTK Query)
-import {
-  useCreateExtendedCategoryMutation,
-  useDeleteExtendedCategoryMutation,
-  useGetExtendedCategoriesQuery,
-  useGetExtendedCategoryQuery,
-  useUpdateExtendedCategoryMutation,
-} from "../store/extendedApiSlice";
-
 export const useExtendedCategories = (options) =>
   useGetExtendedCategoriesQuery(undefined, options);
 
@@ -172,14 +133,6 @@ export const useDeleteExtendedCategory = (options) =>
   useDeleteExtendedCategoryMutation(options);
 
 // Admin User Management Hooks (using RTK Query)
-import {
-  useDeleteAdminUserMutation,
-  useGetAdminUserQuery,
-  useGetAdminUsersQuery,
-  usePromoteUserMutation,
-  useUpdateAdminUserMutation,
-} from "../store/extendedApiSlice";
-
 export const useAdminUsers = (options) =>
   useGetAdminUsersQuery(undefined, options);
 
@@ -194,11 +147,6 @@ export const useDeleteAdminUser = (options) =>
 export const usePromoteUser = (options) => usePromoteUserMutation(options);
 
 // Admin Order Management Hooks (using RTK Query)
-import {
-  useGetAdminOrdersQuery,
-  useUpdateOrderStatusMutation,
-} from "../store/extendedApiSlice";
-
 export const useAdminOrders = (options) =>
   useGetAdminOrdersQuery(undefined, options);
 
@@ -206,12 +154,6 @@ export const useUpdateOrderStatus = (options) =>
   useUpdateOrderStatusMutation(options);
 
 // Payment Management Hooks (using RTK Query)
-import {
-  useGetPaymentAnalyticsQuery,
-  useInitiateDisputeMutation,
-  useInitiateRefundMutation,
-} from "../store/extendedApiSlice";
-
 export const usePaymentAnalyticsRTK = (params, options) =>
   useGetPaymentAnalyticsQuery(params, options);
 
@@ -222,12 +164,6 @@ export const useInitiateDisputeRTK = (options) =>
   useInitiateDisputeMutation(options);
 
 // Search Management Hooks (using RTK Query)
-import {
-  useAdvancedSearchQuery,
-  useGetPopularSearchesQuery,
-  useGetSearchAnalyticsQuery,
-} from "../store/extendedApiSlice";
-
 export const useAdvancedSearchRTK = (params, options) =>
   useAdvancedSearchQuery(params, options);
 
@@ -236,5 +172,3 @@ export const useSearchAnalyticsRTK = (params, options) =>
 
 export const usePopularSearchesRTK = (params, options) =>
   useGetPopularSearchesQuery(params, options);
-
-

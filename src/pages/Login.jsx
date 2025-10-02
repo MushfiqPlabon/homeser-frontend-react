@@ -32,12 +32,14 @@ const Login = () => {
   const onSubmit = async (data) => {
     setLoading(true);
 
-    const result = await login({ email: data.email, password: data.password });
+    // The backend expects 'username' field which can be either email or username
+    const result = await login({ username: data.email, password: data.password });
 
     if (result.success) {
       navigate("/");
     } else {
       // Handle server-side errors
+      console.error("Login failed:", result.error);
     }
 
     setLoading(false);

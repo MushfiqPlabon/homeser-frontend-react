@@ -50,13 +50,13 @@ const SettingsManagement = () => {
       site_name: "HomeSer",
       site_description: "Service marketplace platform",
       contact_email: "contact@homeser.com",
-      admin_email: "admin@homeser.com"
+      admin_email: "admin@homeser.com",
     },
     payment: {
       gateway: "sslcommerz",
       currency: "BDT",
       tax_rate: 5,
-      sandbox_mode: true
+      sandbox_mode: true,
     },
     email: {
       smtp_host: "smtp.gmail.com",
@@ -64,30 +64,30 @@ const SettingsManagement = () => {
       smtp_username: "",
       smtp_password: "",
       from_email: "noreply@homeser.com",
-      from_name: "HomeSer"
+      from_name: "HomeSer",
     },
     media: {
       storage_backend: "local",
       max_upload_size: 10,
       allowed_file_types: "jpg,png,gif,pdf,doc,docx",
-      image_quality: 80
+      image_quality: 80,
     },
     security: {
       session_timeout: 30,
       password_min_length: 8,
       require_special_chars: true,
-      two_factor_auth: false
+      two_factor_auth: false,
     },
     performance: {
       cache_timeout: 3600,
       db_connection_pool: 20,
       query_timeout: 30,
-      enable_query_cache: true
-    }
+      enable_query_cache: true,
+    },
   });
   const [formData, setFormData] = useState(settings);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isError, setIsError] = useState(false);
+  const [isLoading, _setIsLoading] = useState(false);
+  const [isError, _setIsError] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isClearingCache, setIsClearingCache] = useState(false);
 
@@ -96,7 +96,7 @@ const SettingsManagement = () => {
     redis_cache: { enabled: true, hit_rate: 95 },
     database_cache: { enabled: true, entries: 1250 },
     total_hits: 45000,
-    miss_rate: 5
+    miss_rate: 5,
   };
 
   const refetch = () => {
@@ -127,9 +127,9 @@ const SettingsManagement = () => {
     try {
       // In a real implementation, this would call an actual API
       // For now, we're just updating the local state
-      setSettings(prev => ({
+      setSettings((prev) => ({
         ...prev,
-        [section]: { ...prev[section], ...formData[section] }
+        [section]: { ...prev[section], ...formData[section] },
       }));
       alert("Settings saved successfully");
       setIsUpdating(false);

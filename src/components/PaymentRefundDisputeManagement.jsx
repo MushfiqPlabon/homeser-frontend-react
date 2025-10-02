@@ -8,9 +8,7 @@ import {
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import { useId, useState } from "react";
-import {
-  useGetAdminOrdersQuery,
-} from "../store/extendedApiSlice";
+import { useGetAdminOrdersQuery } from "../store/extendedApiSlice";
 
 const PaymentRefundDisputeManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -40,16 +38,16 @@ const PaymentRefundDisputeManagement = () => {
   const paymentAnalytics = {
     total_revenue: 0,
     total_orders: 0,
-    success_rate: 0
+    success_rate: 0,
   };
   const analyticsLoading = false;
-  
+
   // Placeholder functions for refund/dispute operations
-  const initiateRefund = () => Promise.resolve();
+  const _initiateRefund = () => Promise.resolve();
   const isRefunding = false;
-  const initiateDispute = () => Promise.resolve();
+  const _initiateDispute = () => Promise.resolve();
   const isDisputing = false;
-  
+
   const {
     data: orders,
     isLoading: ordersLoading,

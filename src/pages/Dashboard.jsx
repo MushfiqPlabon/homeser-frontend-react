@@ -45,7 +45,9 @@ const Dashboard = () => {
           setLoading(true);
           setError("");
           const response = await ordersAPI.getUserOrders();
-          setOrders(response.data.data || response.data || []);
+          // Ensure orders is always an array
+          const ordersData = response.data?.data || response.data || [];
+          setOrders(Array.isArray(ordersData) ? ordersData : []);
         } catch (err) {
           setError("Failed to load orders");
           console.error("Error fetching orders:", err);

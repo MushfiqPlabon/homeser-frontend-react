@@ -17,7 +17,7 @@ const Navbar = () => {
   const { user, logout, isAuthenticated, isAdmin } = useAuth();
 
   const { data: cart } = useGetCartQuery(undefined, {
-    skip: !isAuthenticated // Only fetch cart data for authenticated users
+    skip: !isAuthenticated, // Only fetch cart data for authenticated users
   });
   const navigate = useNavigate();
 

@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
 
     // Also remove from localStorage as a fallback
-    if (typeof localStorage !== 'undefined') {
+    if (typeof localStorage !== "undefined") {
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
     }
@@ -45,9 +45,12 @@ export const AuthProvider = ({ children }) => {
   const refreshToken = useCallback(async () => {
     try {
       // Get refresh token from memory or localStorage
-      const refreshTokenFromStorage = authTokens.refresh || 
-        (typeof localStorage !== 'undefined' ? localStorage.getItem("refresh_token") : null);
-      
+      const refreshTokenFromStorage =
+        authTokens.refresh ||
+        (typeof localStorage !== "undefined"
+          ? localStorage.getItem("refresh_token")
+          : null);
+
       if (!refreshTokenFromStorage) {
         throw new Error("No refresh token available");
       }
@@ -56,14 +59,34 @@ export const AuthProvider = ({ children }) => {
         refresh: refreshTokenFromStorage,
       });
 
-      const { access } = response.data;
+      // Handle both standard and custom response formats
+      let access, refresh;
+      if (response.data.success === false) {
+        // This shouldn't happen in a successful refresh, but if it does...
+        throw new Error(response.data.error?.message || "Token refresh failed");
+      } else if (response.data.access) {
+        // Standard SimpleJWT response format
+        access = response.data.access;
+        refresh = response.data.refresh; // This will be present if refresh token was rotated
+      } else {
+        // Custom format where the access token is at the top level
+        access = response.data.access || response.data.data?.access;
+        refresh = response.data.refresh || response.data.data?.refresh;
+      }
 
-      // Update access token in memory
-      setAuthTokens((prev) => ({ ...prev, access }));
+      // Update tokens in memory
+      setAuthTokens((prev) => ({
+        ...prev,
+        access,
+        refresh: refresh || prev.refresh, // Update refresh token only if provided (rotated)
+      }));
 
       // Also update in localStorage
-      if (typeof localStorage !== 'undefined') {
+      if (typeof localStorage !== "undefined") {
         localStorage.setItem("access_token", access);
+        if (refresh) {
+          localStorage.setItem("refresh_token", refresh);
+        }
       }
 
       return access;
@@ -79,7 +102,7 @@ export const AuthProvider = ({ children }) => {
     // Remove the global default authorization header setting
     // Authorization headers are now handled conditionally in the axios interceptor
     // This allows guest users to access public endpoints without forced authentication
-  }, [authTokens.access]);
+  }, []);
 
   // Set the token refresh function in the api module
   useEffect(() => {

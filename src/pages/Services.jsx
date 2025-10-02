@@ -9,9 +9,11 @@ import { Link } from "react-router-dom";
 import LazyImage from "../components/LazyImage";
 import { servicesAPI } from "../utils/api";
 import { getFallbackImage } from "../utils/imageUtils";
+import { usePerformanceMonitor } from "../utils/performanceMonitoring";
 import { renderStars } from "../utils/uiUtils.jsx";
 
 const Services = () => {
+  const performanceMonitor = usePerformanceMonitor();
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -26,6 +28,9 @@ const Services = () => {
   const searchInputId = useId();
 
   const fetchServices = useCallback(async () => {
+    const operationId = `fetchServices_${Date.now()}`;
+    performanceMonitor.startTiming(operationId);
+
     try {
       setLoading(true);
       const params = {
@@ -54,7 +59,21 @@ const Services = () => {
         setHasNextPage(false);
         setHasPreviousPage(false);
       }
+
+      // Record successful fetch time
+      const duration = performanceMonitor.endTiming(
+        operationId,
+        "services_fetch",
+      );
+      performanceMonitor.recordMetric("services_fetch_duration", duration);
     } catch (err) {
+      // Record failed fetch time
+      const duration = performanceMonitor.endTiming(
+        operationId,
+        "services_fetch",
+      );
+      performanceMonitor.recordMetric("services_fetch_duration", duration);
+
       // Check if it's an axios cancellation
       if (axios.isCancel?.(err)) {
         // Request was cancelled, which is expected behavior
@@ -70,7 +89,7 @@ const Services = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, sortBy, searchTerm]);
+  }, [page, sortBy, searchTerm, performanceMonitor]);
 
   useEffect(() => {
     // Log the API base URL for debugging purposes

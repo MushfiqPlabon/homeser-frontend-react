@@ -16,6 +16,7 @@ import LazyImage from "../components/LazyImage";
 import { useAuth } from "../context/AuthContext";
 import { useCheckoutMutation, useGetCartQuery } from "../store/apiSlice";
 import { getFallbackImage } from "../utils/imageUtils";
+import { usePerformanceMonitor } from "../utils/performanceMonitoring";
 
 const schema = z.object({
   name: z.string().min(1, "Full name is required"),
@@ -25,6 +26,7 @@ const schema = z.object({
 });
 
 const Checkout = () => {
+  const performanceMonitor = usePerformanceMonitor();
   const nameId = useId();
   const phoneId = useId();
   const addressId = useId();
@@ -47,9 +49,17 @@ const Checkout = () => {
   const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
+  // Record checkout load time
+  const checkoutLoadId = `checkout_load_${Date.now()}`;
+  performanceMonitor.startTiming(checkoutLoadId);
+
   // Use RTK Query to get cart data only for authenticated users
-  const { data: cartData, isLoading, isError } = useGetCartQuery(undefined, {
-    skip: !isAuthenticated // Only fetch cart data for authenticated users
+  const {
+    data: cartData,
+    isLoading,
+    isError,
+  } = useGetCartQuery(undefined, {
+    skip: !isAuthenticated, // Only fetch cart data for authenticated users
   });
   const [checkout, { isLoading: isCheckoutLoading }] = useCheckoutMutation();
 
@@ -68,6 +78,13 @@ const Checkout = () => {
       return;
     }
 
+    // Record authentication check completion
+    const duration = performanceMonitor.endTiming(
+      checkoutLoadId,
+      "checkout_auth_check",
+    );
+    performanceMonitor.recordMetric("checkout_auth_check_time", duration);
+
     // Pre-fill form with user data if available
     if (user) {
       const fullName =
@@ -78,14 +95,35 @@ const Checkout = () => {
       }));
       setValue("name", fullName || user.username || "");
     }
-  }, [isAuthenticated, user, navigate, setValue]);
+  }, [
+    isAuthenticated,
+    user,
+    navigate,
+    setValue,
+    performanceMonitor,
+    checkoutLoadId,
+  ]);
 
   // Update form values when cartData changes
   useEffect(() => {
     if (cartData) {
+      // Record cart data fetch completion
+      const duration = performanceMonitor.endTiming(
+        checkoutLoadId,
+        "checkout_cart_fetch",
+      );
+      performanceMonitor.recordMetric("checkout_cart_fetch_time", duration);
+
       // Update the react-hook-form values if needed
+    } else if (isError) {
+      // Record cart data fetch failure
+      const duration = performanceMonitor.endTiming(
+        checkoutLoadId,
+        "checkout_cart_fetch",
+      );
+      performanceMonitor.recordMetric("checkout_cart_fetch_time", duration);
     }
-  }, [cartData]);
+  }, [cartData, isError, performanceMonitor, checkoutLoadId]);
 
   const _handleChange = (e) => {
     const { name, value } = e.target;
@@ -110,7 +148,18 @@ const Checkout = () => {
         payment_method: data.payment_method,
       };
 
+      // Record checkout initiation
+      const checkoutOperationId = `checkout_${Date.now()}`;
+      performanceMonitor.startTiming(checkoutOperationId);
+
       const response = await checkout(checkoutData);
+
+      // Record checkout completion
+      const duration = performanceMonitor.endTiming(
+        checkoutOperationId,
+        "checkout",
+      );
+      performanceMonitor.recordMetric("checkout_time", duration);
 
       if (response.data?.gateway_url) {
         window.location.href = response.data.gateway_url;
@@ -118,6 +167,13 @@ const Checkout = () => {
         setError(response.error?.message || "Payment gateway URL not received");
       }
     } catch (err) {
+      // Record checkout failure
+      const duration = performanceMonitor.endTiming(
+        checkoutOperationId,
+        "checkout",
+      );
+      performanceMonitor.recordMetric("checkout_time", duration);
+
       const errorMessage =
         err.response?.data?.error || "Checkout failed. Please try again.";
       setError(errorMessage);

@@ -1,26 +1,31 @@
+import { useAuth } from "../context/AuthContext";
 import {
   useAddToCartMutation,
   useGetCartQuery,
   useRemoveFromCartMutation,
   useUpdateCartItemQuantityMutation,
 } from "../store/apiSlice";
-import { useAuth } from "../context/AuthContext";
 
 export const useCart = () => {
   const { isAuthenticated } = useAuth();
-  
-  const { data: cart, isLoading, isError, error } = useGetCartQuery(undefined, {
-    skip: !isAuthenticated // Only fetch cart data for authenticated users
+
+  const {
+    data: cart,
+    isLoading,
+    isError,
+    error,
+  } = useGetCartQuery(undefined, {
+    skip: !isAuthenticated, // Only fetch cart data for authenticated users
   });
-  
+
   const [removeFromCart] = useRemoveFromCartMutation();
   const [updateCartItemQuantity] = useUpdateCartItemQuantityMutation();
   const [addToCart] = useAddToCartMutation();
 
-  const items = isAuthenticated && cart?.items || [];
-  const subtotal = isAuthenticated && cart?.subtotal || 0;
-  const tax = isAuthenticated && cart?.tax || 0;
-  const total = isAuthenticated && cart?.total || 0;
+  const items = (isAuthenticated && cart?.items) || [];
+  const subtotal = (isAuthenticated && cart?.subtotal) || 0;
+  const tax = (isAuthenticated && cart?.tax) || 0;
+  const total = (isAuthenticated && cart?.total) || 0;
 
   return {
     cart,

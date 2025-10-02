@@ -11,10 +11,10 @@ import { useId, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
-  useCreateReview,
-  useUpdateReview,
-  useUserOrders,
-} from "../hooks/useApi";
+  useCreateReviewMutation,
+  useGetUserOrdersQuery,
+  useUpdateReviewMutation,
+} from "../store/extendedApiSlice";
 
 const OrdersPage = () => {
   const { isAuthenticated } = useAuth();
@@ -34,9 +34,9 @@ const OrdersPage = () => {
   });
   const [showReviewForm, setShowReviewForm] = useState(false);
 
-  const { data: orders, isLoading, isError, error } = useUserOrders();
-  const [updateReview] = useUpdateReview();
-  const [createReview] = useCreateReview();
+  const { data: orders, isLoading, isError, error } = useGetUserOrdersQuery();
+  const [updateReview] = useUpdateReviewMutation();
+  const [createReview] = useCreateReviewMutation();
 
   // Check authentication
   if (!isAuthenticated) {
@@ -73,7 +73,7 @@ const OrdersPage = () => {
       if (reviewForm.orderId) {
         // This is for updating an existing review
         await updateReview({
-          reviewId: reviewForm.orderId,
+          id: reviewForm.orderId,
           reviewData: {
             rating: reviewForm.rating,
             text: reviewForm.text,

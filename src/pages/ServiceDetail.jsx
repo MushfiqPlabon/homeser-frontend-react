@@ -21,11 +21,15 @@ import { useAuth } from "../context/AuthContext";
 import {
   useCreateReview,
   useDeleteReview,
-  useService,
-  useServiceReviews,
   useUpdateReview,
 } from "../hooks/useApi";
 import { useCart } from "../hooks/useCart";
+import {
+  useGetServiceQuery,
+  useGetServiceReviewsQuery,
+} from "../store/extendedApiSlice";
+import { getFallbackImage } from "../utils/imageUtils";
+import { usePerformanceMonitor } from "../utils/performanceMonitoring";
 import { renderStars } from "../utils/uiUtils.jsx";
 
 // Define review schema
@@ -38,6 +42,7 @@ const reviewSchema = z.object({
 });
 
 const ServiceDetail = () => {
+  const performanceMonitor = usePerformanceMonitor();
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
@@ -47,9 +52,28 @@ const ServiceDetail = () => {
   const reviewTextId = useId();
   const editReviewTextId = useId();
 
+  // Start timing service load
+  const serviceLoadId = `service_load_${id}_${Date.now()}`;
+  performanceMonitor.startTiming(serviceLoadId);
+
   // Fetch service and reviews data
-  const { data: service, isLoading: isLoadingService } = useService(id);
-  const { data: reviews } = useServiceReviews(id);
+  const {
+    data: service,
+    isLoading: isLoadingService,
+    error: errorService,
+  } = useGetServiceQuery(id);
+  const { data: reviews } = useGetServiceReviewsQuery(id);
+
+  // Record service load time when service data arrives
+  useEffect(() => {
+    if (service && !isLoadingService) {
+      const duration = performanceMonitor.endTiming(
+        serviceLoadId,
+        "service_detail_load",
+      );
+      performanceMonitor.recordMetric("service_detail_load_time", duration);
+    }
+  }, [service, isLoadingService, performanceMonitor, serviceLoadId]);
 
   // Cart functionality
   const { addToCart, isLoading: isAddingToCart } = useCart();
@@ -86,8 +110,10 @@ const ServiceDetail = () => {
 
   // Set reviews when they load
   useEffect(() => {
-    if (reviews) {
+    if (reviews && Array.isArray(reviews)) {
       setReviews(reviews);
+    } else {
+      setReviews([]);  // Ensure it's always an array
     }
   }, [reviews]);
 
@@ -234,12 +260,6 @@ const ServiceDetail = () => {
     }
   };
 
-  // Get fallback image
-  const getFallbackImage = (serviceName) => {
-    // Create a simple fallback image based on service name
-    return `https://placehold.co/600x400?text=${encodeURIComponent(serviceName)}`;
-  };
-
   // Loading state
   if (isLoadingService) {
     return (
@@ -328,13 +348,13 @@ const ServiceDetail = () => {
             <div className="space-y-4">
               <div className="flex items-center space-x-4">
                 <label
-                  htmlFor={quantitySelectId}
+                  htmlFor={_quantitySelectId}
                   className="text-sm font-medium text-gray-700"
                 >
                   Quantity:
                 </label>
                 <select
-                  id={quantitySelectId}
+                  id={_quantitySelectId}
                   value={quantity}
                   onChange={(e) => setQuantity(parseInt(e.target.value, 10))}
                   className="border border-gray-300/50 rounded-lg px-3 py-1 backdrop-blur-sm bg-white/50"

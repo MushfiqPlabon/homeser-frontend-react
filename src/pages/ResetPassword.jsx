@@ -1,7 +1,7 @@
 // ResetPassword.jsx
 // Password reset confirmation page
 
-import { useId, useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { authAPI } from "../utils/api";

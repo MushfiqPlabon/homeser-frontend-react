@@ -8,9 +8,11 @@ import LazyImage from "../components/LazyImage";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../hooks/useCart";
 import { getFallbackImage } from "../utils/imageUtils";
+import { usePerformanceMonitor } from "../utils/performanceMonitoring";
 import { renderStars } from "../utils/uiUtils.jsx";
 
 const Cart = () => {
+  const performanceMonitor = usePerformanceMonitor();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
@@ -28,33 +30,65 @@ const Cart = () => {
 
   const [updatingQuantities, setUpdatingQuantities] = useState({});
 
+  // Record cart load time
+  const cartLoadId = `cart_load_${Date.now()}`;
+  performanceMonitor.startTiming(cartLoadId);
+
   // Check authentication
   if (!isAuthenticated) {
     navigate("/login", { state: { from: { pathname: "/cart" } } });
     return null;
   }
 
+  // Record cart load completion
+  if (!isLoading && items) {
+    const duration = performanceMonitor.endTiming(cartLoadId, "cart_load");
+    performanceMonitor.recordMetric("cart_load_time", duration);
+  }
+
   const handleRemoveItem = async (serviceId) => {
+    const operationId = `remove_item_${serviceId}_${Date.now()}`;
+    performanceMonitor.startTiming(operationId);
+
     if (
       window.confirm(
         "Are you sure you want to remove this item from your cart?",
       )
     ) {
-      await removeFromCart(serviceId);
+      try {
+        await removeFromCart(serviceId);
+        const duration = performanceMonitor.endTiming(
+          operationId,
+          "remove_item",
+        );
+        performanceMonitor.recordMetric("remove_item_time", duration);
+      } catch (error) {
+        const duration = performanceMonitor.endTiming(
+          operationId,
+          "remove_item",
+        );
+        performanceMonitor.recordMetric("remove_item_time", duration);
+        throw error;
+      }
+    } else {
+      performanceMonitor.endTiming(operationId, "remove_item_cancelled");
     }
   };
 
   const handleUpdateQuantity = async (serviceId, currentQuantity, change) => {
+    const operationId = `update_quantity_${serviceId}_${Date.now()}`;
+    performanceMonitor.startTiming(operationId);
+
     const newQuantity = currentQuantity + change;
     if (newQuantity <= 0) {
       handleRemoveItem(serviceId);
       return;
     }
 
-    await handleQuantityChange(serviceId, newQuantity);
+    await handleQuantityChange(serviceId, newQuantity, operationId);
   };
 
-  const handleQuantityChange = async (serviceId, newQuantity) => {
+  const handleQuantityChange = async (serviceId, newQuantity, operationId) => {
     // Validate quantity
     if (newQuantity < 1) newQuantity = 1;
     if (newQuantity > 10) newQuantity = 10;
@@ -64,7 +98,17 @@ const Cart = () => {
 
     try {
       await updateCartItemQuantity({ serviceId, quantity: newQuantity });
+      const duration = performanceMonitor.endTiming(
+        operationId,
+        "update_quantity",
+      );
+      performanceMonitor.recordMetric("update_quantity_time", duration);
     } catch (error) {
+      const duration = performanceMonitor.endTiming(
+        operationId,
+        "update_quantity",
+      );
+      performanceMonitor.recordMetric("update_quantity_time", duration);
       console.error("Failed to update quantity:", error);
     } finally {
       // Clear loading state for this item

@@ -9,8 +9,8 @@ import { StarIcon } from "@heroicons/react/24/solid";
 import { useId, useState } from "react";
 import {
   useAdvancedSearchRTK,
-  useSearchAnalyticsRTK,
   usePopularSearchesRTK,
+  useSearchAnalyticsRTK,
 } from "../hooks/useApi";
 import AnalyticsDashboard from "./AnalyticsDashboard";
 
