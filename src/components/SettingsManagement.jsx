@@ -11,9 +11,15 @@ import {
   ShieldCheckIcon,
 } from "@heroicons/react/24/outline";
 import { useEffect, useId, useState } from "react";
+import { useToast } from "../context/ToastContext";
+import {
+  useGetSettingsQuery,
+  useUpdateSettingsMutation,
+  useClearCacheMutation,
+} from "../store/extendedApiSlice";
 
-// Placeholder state management for settings instead of using non-existent API endpoints
 const SettingsManagement = () => {
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState("general");
   const _sandboxModeCheckboxId = useId();
   const _requireSpecialCharsCheckboxId = useId();
@@ -44,8 +50,13 @@ const SettingsManagement = () => {
   const dbConnectionPoolId = useId();
   const queryTimeoutId = useId();
 
-  // Placeholder state for settings and loading states
-  const [settings, setSettings] = useState({
+  // API hooks
+  const { data: settings, isLoading, isError, refetch } = useGetSettingsQuery();
+  const [updateSettings, { isLoading: isUpdating }] =
+    useUpdateSettingsMutation();
+  const [clearCache, { isLoading: isClearingCache }] = useClearCacheMutation();
+
+  const [formData, setFormData] = useState({
     general: {
       site_name: "HomeSer",
       site_description: "Service marketplace platform",
@@ -85,24 +96,20 @@ const SettingsManagement = () => {
       enable_query_cache: true,
     },
   });
-  const [formData, setFormData] = useState(settings);
-  const [isLoading, _setIsLoading] = useState(false);
-  const [isError, _setIsError] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [isClearingCache, setIsClearingCache] = useState(false);
 
-  // Placeholder cache status data
-  const cacheStatus = {
+  // Cache status data
+  const cacheStatus = settings?.cache_status || {
     redis_cache: { enabled: true, hit_rate: 95 },
     database_cache: { enabled: true, entries: 1250 },
     total_hits: 45000,
     miss_rate: 5,
   };
 
-  const refetch = () => {
-    // Placeholder for refetch functionality
-    console.log("Refetching settings...");
-  };
+  useEffect(() => {
+    if (settings) {
+      setFormData(settings);
+    }
+  }, [settings]);
 
   useEffect(() => {
     if (settings) {
@@ -122,34 +129,28 @@ const SettingsManagement = () => {
 
   const handleSaveSettings = async (section) => {
     setIsUpdating(true);
-    // Placeholder for save functionality
-    console.log("Saving settings for section:", section, formData[section]);
     try {
-      // In a real implementation, this would call an actual API
-      // For now, we're just updating the local state
-      setSettings((prev) => ({
-        ...prev,
-        [section]: { ...prev[section], ...formData[section] },
-      }));
-      alert("Settings saved successfully");
+      const payload = { [section]: formData[section] };
+      await updateSettings(payload).unwrap();
+      showToast("Settings saved successfully", "success");
       setIsUpdating(false);
     } catch (error) {
       console.error("Failed to save settings:", error);
+      showToast(`Failed to save settings: ${error.message}`, "error");
       setIsUpdating(false);
     }
   };
 
   const handleClearCache = async () => {
     setIsClearingCache(true);
-    // Placeholder for clear cache functionality
-    console.log("Clearing cache...");
     try {
-      // In a real implementation, this would call an actual API
-      alert("Cache cleared successfully");
+      await clearCache().unwrap();
+      showToast("Cache cleared successfully", "success");
       setIsClearingCache(false);
+      refetch(); // Refresh settings after cache is cleared
     } catch (error) {
       console.error("Failed to clear cache:", error);
-      alert("Failed to clear cache");
+      showToast(`Failed to clear cache: ${error.message}`, "error");
       setIsClearingCache(false);
     }
   };

@@ -10,6 +10,7 @@ import { StarIcon } from "@heroicons/react/24/solid";
 import { useId, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 import {
   useCreateReviewMutation,
   useGetUserOrdersQuery,
@@ -18,6 +19,7 @@ import {
 
 const OrdersPage = () => {
   const { isAuthenticated } = useAuth();
+  const { showToast } = useToast();
   const navigate = useNavigate();
 
   const searchInputId = useId();
@@ -100,10 +102,10 @@ const OrdersPage = () => {
       setShowReviewForm(false);
 
       // Show success message
-      alert("Review submitted successfully!");
+      showToast("Review submitted successfully!", "success");
     } catch (err) {
       console.error("Failed to submit review:", err);
-      alert("Failed to submit review. Please try again.");
+      showToast("Failed to submit review. Please try again.", "error");
     }
   };
 

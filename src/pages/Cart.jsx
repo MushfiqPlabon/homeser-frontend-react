@@ -36,8 +36,25 @@ const Cart = () => {
 
   // Check authentication
   if (!isAuthenticated) {
-    navigate("/login", { state: { from: { pathname: "/cart" } } });
-    return null;
+    // Don't redirect immediately in component render; let useEffect handle it
+    // This prevents the UI from disappearing during auth checks
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Please Log In</h2>
+          <p className="text-gray-600 mb-6">
+            You need to be logged in to access your cart.
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate("/login", { state: { from: { pathname: "/cart" } } })}
+            className="btn-primary"
+          >
+            Log In to Continue
+          </button>
+        </div>
+      </div>
+    );
   }
 
   // Record cart load completion

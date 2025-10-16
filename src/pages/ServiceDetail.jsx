@@ -45,7 +45,7 @@ const ServiceDetail = () => {
   const performanceMonitor = usePerformanceMonitor();
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   const _quantitySelectId = useId();
   const reviewRatingId = useId();
@@ -62,7 +62,11 @@ const ServiceDetail = () => {
     isLoading: isLoadingService,
     error: errorService,
   } = useGetServiceQuery(id);
-  const { data: reviews } = useGetServiceReviewsQuery(id);
+  const { 
+    data: reviews, 
+    error: reviewsError,
+    isLoading: isLoadingReviews
+  } = useGetServiceReviewsQuery(id);
 
   // Record service load time when service data arrives
   useEffect(() => {
@@ -108,14 +112,31 @@ const ServiceDetail = () => {
     },
   });
 
-  // Set reviews when they load
+  // Set reviews when they load - handle paginated response
   useEffect(() => {
-    if (reviews && Array.isArray(reviews)) {
-      setReviews(reviews);
+    if (reviews) {
+      // Check if the response is paginated (has 'results' field)
+      if (reviews.results !== undefined) {
+        // Handle paginated response
+        setReviews(reviews.results);
+      } else if (Array.isArray(reviews)) {
+        // Handle direct array response
+        setReviews(reviews);
+      } else {
+        // Default to empty array
+        setReviews([]);
+      }
     } else {
-      setReviews([]);  // Ensure it's always an array
+      setReviews([]); // Ensure it's always an array
     }
   }, [reviews]);
+
+  // Handle reviews error
+  useEffect(() => {
+    if (reviewsError) {
+      setError("Failed to load reviews: " + (reviewsError.data?.message || reviewsError.message || "Unknown error"));
+    }
+  }, [reviewsError]);
 
   // Handle adding service to cart
   const handleAddToCart = async () => {
@@ -146,7 +167,7 @@ const ServiceDetail = () => {
     try {
       if (editingReview) {
         // Update existing review
-        await updateReview({ reviewId: editingReview.id, reviewData: data });
+        await updateReview({ reviewId: editingReview.id, serviceId: id, reviewData: data });
         setSuccessMessage("Review updated successfully!");
 
         // Update the review in the local state
@@ -207,6 +228,7 @@ const ServiceDetail = () => {
     try {
       await updateReview({
         reviewId: editingReview.id,
+        serviceId: id,
         reviewData: editReviewForm,
       });
 
@@ -246,7 +268,7 @@ const ServiceDetail = () => {
     setSuccessMessage("");
 
     try {
-      await deleteReview(reviewId);
+      await deleteReview({ reviewId, serviceId: id });
       setSuccessMessage("Review deleted successfully!");
 
       // Remove the review from the reviews list
@@ -422,6 +444,13 @@ const ServiceDetail = () => {
           {successMessage && (
             <div className="bg-green-50/80 border border-green-200/50 text-green-600 px-4 py-3 rounded-md mb-6 backdrop-blur-sm">
               {successMessage}
+            </div>
+          )}
+
+          {/* Loading indicator for reviews */}
+          {isLoadingReviews && (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
             </div>
           )}
 
@@ -605,7 +634,9 @@ const ServiceDetail = () => {
 
           {/* Reviews List */}
           <div className="space-y-6">
-            {reviewsList.length === 0 ? (
+            {isLoadingReviews ? (
+              <p className="text-gray-500 text-center py-8">Loading reviews...</p>
+            ) : reviewsList.length === 0 ? (
               <p className="text-gray-500 text-center py-8">
                 No reviews yet. Be the first to review this service!
               </p>
@@ -623,7 +654,7 @@ const ServiceDetail = () => {
                           "Anonymous"}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {formatDate(review.created_at)}
+                        {formatDate(review.created)}
                       </div>
                     </div>
                     {isAuthenticated &&

@@ -8,7 +8,12 @@ import {
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import { useId, useState } from "react";
-import { useGetAdminOrdersQuery } from "../store/extendedApiSlice";
+import {
+  useGetAdminOrdersQuery,
+  useInitiateRefundMutation,
+  useInitiateDisputeMutation,
+  useGetPaymentAnalyticsQuery,
+} from "../store/extendedApiSlice";
 
 const PaymentRefundDisputeManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -34,19 +39,13 @@ const PaymentRefundDisputeManagement = () => {
   const refundReasonId = useId();
   const disputeReasonId = useId();
 
-  // Placeholder for payment analytics since the endpoint doesn't exist
-  const paymentAnalytics = {
-    total_revenue: 0,
-    total_orders: 0,
-    success_rate: 0,
-  };
-  const analyticsLoading = false;
-
-  // Placeholder functions for refund/dispute operations
-  const _initiateRefund = () => Promise.resolve();
-  const isRefunding = false;
-  const _initiateDispute = () => Promise.resolve();
-  const isDisputing = false;
+  // API hooks
+  const { data: paymentAnalytics, isLoading: analyticsLoading } =
+    useGetPaymentAnalyticsQuery();
+  const [initiateRefund, { isLoading: isRefunding }] =
+    useInitiateRefundMutation();
+  const [initiateDispute, { isLoading: isDisputing }] =
+    useInitiateDisputeMutation();
 
   const {
     data: orders,
@@ -94,18 +93,18 @@ const PaymentRefundDisputeManagement = () => {
     setMessage({ type: "", text: "" });
 
     try {
-      // Placeholder for refund functionality since endpoint doesn't exist
-      console.log("Initiating refund for order:", selectedPayment.id, {
+      const payload = {
+        payment_id: selectedPayment.id,
         refund_amount: parseFloat(refundData.amount),
         reason: refundData.reason,
-      });
+      };
 
+      await initiateRefund(payload).unwrap();
       setMessage({ type: "success", text: "Refund initiated successfully!" });
       setShowRefundModal(false);
       setRefundData({ amount: "", reason: "" });
       setSelectedPayment(null);
-      // In a real implementation, we would refetch orders
-      // refetchOrders();
+      refetchOrders(); // Refresh orders after refund initiation
     } catch (err) {
       const errorMessage =
         err.response?.data?.message || "Failed to initiate refund";
@@ -129,17 +128,17 @@ const PaymentRefundDisputeManagement = () => {
     setMessage({ type: "", text: "" });
 
     try {
-      // Placeholder for dispute functionality since endpoint doesn't exist
-      console.log("Initiating dispute for order:", selectedPayment.id, {
+      const payload = {
+        payment_id: selectedPayment.id,
         dispute_reason: disputeData.reason,
-      });
+      };
 
+      await initiateDispute(payload).unwrap();
       setMessage({ type: "success", text: "Dispute initiated successfully!" });
       setShowDisputeModal(false);
       setDisputeData({ reason: "" });
       setSelectedPayment(null);
-      // In a real implementation, we would refetch orders
-      // refetchOrders();
+      refetchOrders(); // Refresh orders after dispute initiation
     } catch (err) {
       const errorMessage =
         err.response?.data?.message || "Failed to initiate dispute";

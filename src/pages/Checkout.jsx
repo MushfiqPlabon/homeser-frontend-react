@@ -181,7 +181,15 @@ const Checkout = () => {
   };
 
   if (!isAuthenticated) {
-    return null; // Will redirect in useEffect
+    // Don't return null; instead show a loading state while redirect happens in useEffect
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
+        <div className="text-center card">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-lg">Redirecting to login...</p>
+        </div>
+      </div>
+    );
   }
 
   if (isLoading) {

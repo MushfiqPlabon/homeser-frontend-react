@@ -4,10 +4,9 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 
-// Create API slice for cart operations
-export const apiSlice = createApi({
-  reducerPath: "api",
-  baseQuery: fetchBaseQuery({
+// Create baseQuery with token refresh handling
+const baseQueryWithReauth = async (args, api, extraOptions) => {
+  const baseQuery = fetchBaseQuery({
     baseUrl: API_BASE_URL,
     prepareHeaders: (headers) => {
       // Get token from localStorage (matching existing auth pattern)
@@ -17,7 +16,49 @@ export const apiSlice = createApi({
       }
       return headers;
     },
-  }),
+  });
+
+  let result = await baseQuery(args, api, extraOptions);
+
+  // If we get a 401, try to refresh the token
+  if (result.error && result.error.status === 401) {
+    // Try to refresh the token
+    try {
+      const refreshToken = localStorage.getItem("refresh_token");
+      if (refreshToken) {
+        const refreshResult = await baseQuery(
+          {
+            url: "/auth/token/refresh/",
+            method: "POST",
+            body: { refresh: refreshToken },
+          },
+          api,
+          extraOptions,
+        );
+
+        if (refreshResult.data?.access) {
+          // Store new access token
+          localStorage.setItem("access_token", refreshResult.data.access);
+
+          // Retry the original request with new token
+          result = await baseQuery(args, api, extraOptions);
+        }
+      }
+    } catch (_refreshError) {
+      // If refresh fails, clear tokens and redirect to login
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      // We could redirect to login here if needed
+    }
+  }
+
+  return result;
+};
+
+// Create API slice for cart operations
+export const apiSlice = createApi({
+  reducerPath: "api",
+  baseQuery: baseQueryWithReauth,
   tagTypes: ["Cart"],
   endpoints: (builder) => ({
     // Get cart endpoint

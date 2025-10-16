@@ -10,9 +10,13 @@ const ProtectedRoute = ({
 }) => {
   const { isAuthenticated, loading, hasRole, hasPermission } = useAuth();
 
-  // Show nothing while checking auth status
+  // Show loading state while checking auth status instead of returning null
   if (loading) {
-    return null;
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    );
   }
 
   // If not authenticated, redirect to login

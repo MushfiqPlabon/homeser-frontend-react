@@ -23,6 +23,7 @@ For technical recruiters: This frontend implements modern web development practi
 - **Performance**: Code splitting, lazy loading, and optimized bundle sizes for fast loading
 - **State Management**: Redux Toolkit and TanStack Query for efficient client and server state management
 - **Security**: JWT token handling and secure API communication
+- **Role Management**: Implementation of role-based access control for customers, service providers, and admins
 - **Analytics Integration**: Real-time dashboards for email and sentiment analytics
 - **Development Tools**: Vite for fast builds, TypeScript for type safety, and automated testing
 
@@ -42,6 +43,11 @@ For technical recruiters: This frontend implements modern web development practi
 - Responsive design ensuring consistent experience across all devices
 - Interactive elements and visual feedback for improved engagement
 - Personalized recommendations based on user behavior
+
+### Service Provider Experience
+- Dedicated dashboard for service providers to manage their services
+- Intuitive service creation and editing workflows
+- Real-time service management capabilities
 
 ## Quick Start
 
@@ -94,9 +100,13 @@ The frontend is configured for easy deployment on Vercel with:
 - Shopping cart functionality
 - Checkout and payment processing
 - User dashboard with order history
+- Service Provider Dashboard with ability to create and manage services
+- Create Service page for adding new services
+- Edit Service page for updating existing services
 - Admin dashboard with analytics
 - Email analytics dashboard
 - Sentiment analysis dashboard
 - Protected routes
 - Modern authentication with JWT
+- Role-based access control (customer, service provider, admin)
 - Real-time UI updates

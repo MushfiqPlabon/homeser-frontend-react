@@ -1,13 +1,14 @@
 // EmailAnalyticsDashboard.jsx
 // Component for displaying email analytics dashboard with charts and statistics
 
-import { useState, useEffect } from "react";
+import { useState, useId } from "react";
 import { useGetEmailStatsQuery } from "../store/extendedApiSlice";
 import { BarChart, LineChart } from "./AnalyticsCharts"; // Assuming these chart components exist
-import LoadingSpinner from "./LoadingSpinner";
 import ErrorMessage from "./ErrorMessage";
+import LoadingSpinner from "./LoadingSpinner";
 
 const EmailAnalyticsDashboard = () => {
+  const dateRangeSelectId = useId();
   const [dateRange, setDateRange] = useState(30); // Default to 30 days
   const {
     data: emailStats,
@@ -59,8 +60,11 @@ const EmailAnalyticsDashboard = () => {
           Email Analytics Dashboard
         </h1>
         <div className="flex items-center">
-          <label className="mr-2 text-gray-600">Time Range:</label>
+          <label htmlFor={dateRangeSelectId} className="mr-2 text-gray-600">
+            Time Range:
+          </label>
           <select
+            id={dateRangeSelectId}
             value={dateRange}
             onChange={(e) => setDateRange(Number(e.target.value))}
             className="border border-gray-300 rounded-md px-3 py-1"
@@ -76,7 +80,9 @@ const EmailAnalyticsDashboard = () => {
       {/* Email Analytics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-white p-6 rounded-xl shadow-md">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Total Emails Sent</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            Total Emails Sent
+          </h3>
           <p className="text-3xl font-bold text-blue-600">
             {emailStats?.data?.total_emails || 0}
           </p>
@@ -97,7 +103,9 @@ const EmailAnalyticsDashboard = () => {
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow-md">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Average Rating</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            Average Rating
+          </h3>
           <p className="text-3xl font-bold text-yellow-600">
             {(emailStats?.data?.average_rating || 0).toFixed(2)}
           </p>
@@ -197,19 +205,21 @@ const EmailAnalyticsDashboard = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {emailStats?.data?.top_rated_services?.slice(0, 5).map((service) => (
-                  <tr key={service.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {service.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {service.avg_rating.toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {service.review_count}
-                    </td>
-                  </tr>
-                ))}
+                {emailStats?.data?.top_rated_services
+                  ?.slice(0, 5)
+                  .map((service) => (
+                    <tr key={service.id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {service.name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {service.avg_rating.toFixed(2)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {service.review_count}
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>

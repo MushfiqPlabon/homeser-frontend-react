@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 
 const schema = z
   .object({
@@ -30,12 +31,40 @@ const Register = () => {
   const emailId = useId();
   const passwordId = useId();
   const passwordConfirmId = useId();
+  const { showToast } = useToast();
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
-  } = useForm(schema);
+    formState: { errors, isValid },
+    watch,
+  } = useForm({
+    resolver: async (data) => {
+      try {
+        // Validate using Zod schema
+        const validatedData = schema.parse(data);
+        return { values: validatedData, errors: {} };
+      } catch (error) {
+        // Transform Zod errors to react-hook-form format
+        const fieldErrors = {};
+        if (error.errors) {
+          error.errors.forEach((err) => {
+            fieldErrors[err.path[0]] = { message: err.message };
+          });
+        }
+        return { values: {}, errors: fieldErrors };
+      }
+    },
+    mode: "onChange",  // Enable real-time validation
+    defaultValues: {
+      first_name: "",
+      last_name: "",
+      username: "",
+      email: "",
+      password: "",
+      password_confirm: "",
+    },
+  });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -52,6 +81,42 @@ const Register = () => {
       navigate("/");
     } else {
       // Handle server-side errors
+      console.error("Registration failed:", result.error);
+
+      // Extract field-specific errors if available
+      let errorMessage =
+        "Registration failed. Please check your information and try again.";
+
+      if (result.error && typeof result.error === "object") {
+        // Handle validation errors from server
+        if (result.error.detail) {
+          errorMessage = result.error.detail;
+        } else if (result.error.non_field_errors) {
+          // Handle non-field errors (usually general registration errors)
+          errorMessage = Array.isArray(result.error.non_field_errors)
+            ? result.error.non_field_errors[0]
+            : result.error.non_field_errors;
+        } else {
+          // Check for field-specific errors
+          const fieldNames = [
+            "first_name",
+            "last_name",
+            "username",
+            "email",
+            "password",
+          ];
+          for (const fieldName of fieldNames) {
+            if (result.error[fieldName]) {
+              errorMessage = Array.isArray(result.error[fieldName])
+                ? result.error[fieldName][0]
+                : result.error[fieldName];
+              break;
+            }
+          }
+        }
+      }
+
+      showToast(errorMessage, "error");
     }
 
     setLoading(false);
@@ -91,14 +156,35 @@ const Register = () => {
                 >
                   First Name
                 </label>
-                <input
-                  id={firstNameId}
-                  type="text"
-                  autoComplete="given-name"
-                  className="input-field mt-1"
-                  placeholder="First name"
-                  {...register("first_name")}
-                />
+                <div className="relative mt-1">
+                  <input
+                    id={firstNameId}
+                    type="text"
+                    autoComplete="given-name"
+                    className={`input-field ${
+                      errors.first_name 
+                        ? "border-red-500" 
+                        : watch("first_name") && !errors.first_name 
+                          ? "border-green-500" 
+                          : "border-gray-300"
+                    }`}
+                    placeholder="First name"
+                    {...register("first_name")}
+                  />
+                  {watch("first_name") && (
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                      {errors.first_name ? (
+                        <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </div>
+                  )}
+                </div>
                 {errors.first_name && (
                   <p className="mt-1 text-sm text-red-600">
                     {errors.first_name.message}
@@ -113,14 +199,35 @@ const Register = () => {
                 >
                   Last Name
                 </label>
-                <input
-                  id={lastNameId}
-                  type="text"
-                  autoComplete="family-name"
-                  className="input-field mt-1"
-                  placeholder="Last name"
-                  {...register("last_name")}
-                />
+                <div className="relative mt-1">
+                  <input
+                    id={lastNameId}
+                    type="text"
+                    autoComplete="family-name"
+                    className={`input-field ${
+                      errors.last_name 
+                        ? "border-red-500" 
+                        : watch("last_name") && !errors.last_name 
+                          ? "border-green-500" 
+                          : "border-gray-300"
+                    }`}
+                    placeholder="Last name"
+                    {...register("last_name")}
+                  />
+                  {watch("last_name") && (
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                      {errors.last_name ? (
+                        <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </div>
+                  )}
+                </div>
                 {errors.last_name && (
                   <p className="mt-1 text-sm text-red-600">
                     {errors.last_name.message}
@@ -136,14 +243,35 @@ const Register = () => {
               >
                 Username
               </label>
-              <input
-                id={usernameId}
-                type="text"
-                autoComplete="username"
-                className="input-field mt-1"
-                placeholder="Choose a username"
-                {...register("username")}
-              />
+              <div className="relative mt-1">
+                <input
+                  id={usernameId}
+                  type="text"
+                  autoComplete="username"
+                  className={`input-field ${
+                    errors.username 
+                      ? "border-red-500" 
+                      : watch("username") && !errors.username 
+                        ? "border-green-500" 
+                        : "border-gray-300"
+                  }`}
+                  placeholder="Choose a username"
+                  {...register("username")}
+                />
+                {watch("username") && (
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    {errors.username ? (
+                      <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                    ) : (
+                      <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </div>
+                )}
+              </div>
               {errors.username && (
                 <p className="mt-1 text-sm text-red-600">
                   {errors.username.message}
@@ -158,14 +286,35 @@ const Register = () => {
               >
                 Email Address
               </label>
-              <input
-                id={emailId}
-                type="email"
-                autoComplete="email"
-                className="input-field mt-1"
-                placeholder="your.email@example.com"
-                {...register("email")}
-              />
+              <div className="relative mt-1">
+                <input
+                  id={emailId}
+                  type="email"
+                  autoComplete="email"
+                  className={`input-field ${
+                    errors.email 
+                      ? "border-red-500" 
+                      : watch("email") && !errors.email 
+                        ? "border-green-500" 
+                        : "border-gray-300"
+                  }`}
+                  placeholder="your.email@example.com"
+                  {...register("email")}
+                />
+                {watch("email") && (
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    {errors.email ? (
+                      <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                    ) : (
+                      <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </div>
+                )}
+              </div>
               {errors.email && (
                 <p className="mt-1 text-sm text-red-600">
                   {errors.email.message}
@@ -185,10 +334,29 @@ const Register = () => {
                   id={passwordId}
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
-                  className="input-field pr-10"
+                  className={`input-field pr-10 ${
+                    errors.password 
+                      ? "border-red-500" 
+                      : watch("password") && !errors.password 
+                        ? "border-green-500" 
+                        : "border-gray-300"
+                  }`}
                   placeholder="Create a strong password"
                   {...register("password")}
                 />
+                {watch("password") && (
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    {errors.password ? (
+                      <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                    ) : (
+                      <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </div>
+                )}
                 <button
                   type="button"
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
@@ -220,10 +388,29 @@ const Register = () => {
                   id={passwordConfirmId}
                   type={showConfirmPassword ? "text" : "password"}
                   autoComplete="new-password"
-                  className="input-field pr-10"
+                  className={`input-field pr-10 ${
+                    errors.password_confirm 
+                      ? "border-red-500" 
+                      : watch("password_confirm") && !errors.password_confirm 
+                        ? "border-green-500" 
+                        : "border-gray-300"
+                  }`}
                   placeholder="Confirm your password"
                   {...register("password_confirm")}
                 />
+                {watch("password_confirm") && (
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    {errors.password_confirm ? (
+                      <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                    ) : (
+                      <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </div>
+                )}
                 <button
                   type="button"
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
@@ -247,8 +434,12 @@ const Register = () => {
           <div>
             <button
               type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loading || !isValid}
+              className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${
+                isValid && !loading
+                  ? "bg-primary-600 hover:bg-primary-700"
+                  : "bg-primary-400 cursor-not-allowed"
+              } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500`}
             >
               {loading ? "Creating account..." : "Create account"}
             </button>
