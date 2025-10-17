@@ -7,9 +7,11 @@ import {
   StarIcon as StarIconSolid,
 } from "@heroicons/react/24/outline";
 import { StarIcon } from "@heroicons/react/24/solid";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
+import { useWebSocket } from "../context/WebSocketContext";
 import {
   useCreateReviewMutation,
   useGetUserOrdersQuery,
@@ -18,6 +20,8 @@ import {
 
 const OrdersPage = () => {
   const { isAuthenticated } = useAuth();
+  const { showToast } = useToast();
+  const { isConnected, subscribeToOrder } = useWebSocket();
   const navigate = useNavigate();
 
   const searchInputId = useId();
@@ -34,9 +38,67 @@ const OrdersPage = () => {
   });
   const [showReviewForm, setShowReviewForm] = useState(false);
 
+  // Local state to manage real-time order updates
+  const [realTimeOrders, setRealTimeOrders] = useState([]);
+  const [orderUpdates, setOrderUpdates] = useState(new Map());
+
   const { data: orders, isLoading, isError, error } = useGetUserOrdersQuery();
   const [updateReview] = useUpdateReviewMutation();
   const [createReview] = useCreateReviewMutation();
+
+  // Update real-time orders when the API data changes
+  useEffect(() => {
+    if (orders) {
+      // Apply any real-time updates to the orders
+      const updatedOrders = orders.map((order) => {
+        const update = orderUpdates.get(order.id);
+        return update
+          ? {
+              ...order,
+              status: update.status,
+              payment_status: update.payment_status,
+            }
+          : order;
+      });
+      setRealTimeOrders(updatedOrders);
+    }
+  }, [orders, orderUpdates]);
+
+  // Subscribe to WebSocket events for order updates
+  useEffect(() => {
+    if (!isConnected || !orders) return;
+
+    // Subscribe to all user orders
+    orders.forEach((order) => {
+      subscribeToOrder(order.id);
+    });
+
+    // Listen for order updates from WebSocket
+    const handleOrderUpdate = (data) => {
+      setOrderUpdates((prev) => {
+        const newUpdates = new Map(prev);
+        newUpdates.set(data.order_id, {
+          status: data.status,
+          timestamp: data.timestamp,
+          isUpdated: true,
+        });
+        return newUpdates;
+      });
+    };
+
+    // Wrapper function for event listener (needed for proper cleanup)
+    const handleOrderUpdateWrapper = (e) => {
+      handleOrderUpdate(e.detail);
+    };
+
+    // Add event listener for WebSocket events
+    window.addEventListener("orderUpdate", handleOrderUpdateWrapper);
+
+    // Cleanup on unmount
+    return () => {
+      window.removeEventListener("orderUpdate", handleOrderUpdateWrapper);
+    };
+  }, [isConnected, orders, subscribeToOrder]);
 
   // Check authentication
   if (!isAuthenticated) {
@@ -45,7 +107,7 @@ const OrdersPage = () => {
   }
 
   // Filter orders based on search and status
-  let filteredOrders = orders || [];
+  let filteredOrders = realTimeOrders || [];
 
   if (searchTerm) {
     filteredOrders = filteredOrders.filter(
@@ -100,15 +162,16 @@ const OrdersPage = () => {
       setShowReviewForm(false);
 
       // Show success message
-      alert("Review submitted successfully!");
+      showToast("Review submitted successfully!", "success");
     } catch (err) {
       console.error("Failed to submit review:", err);
-      alert("Failed to submit review. Please try again.");
+      showToast("Failed to submit review. Please try again.", "error");
     }
   };
 
   // Render order status badge
-  const renderStatusBadge = (status) => {
+  const renderStatusBadge = (status, orderId) => {
+    const isUpdated = orderUpdates.get(orderId)?.isUpdated;
     const statusStyles = {
       pending: "bg-yellow-100 text-yellow-800",
       confirmed: "bg-blue-100 text-blue-800",
@@ -118,16 +181,24 @@ const OrdersPage = () => {
     };
 
     return (
-      <span
-        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusStyles[status] || "bg-gray-100 text-gray-800"}`}
-      >
-        {status.replace("_", " ")}
-      </span>
+      <div className="flex items-center">
+        <span
+          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusStyles[status] || "bg-gray-100 text-gray-800"}`}
+        >
+          {status.replace("_", " ")}
+        </span>
+        {isUpdated && (
+          <span className="ml-1 text-xs text-blue-600 animate-pulse">
+            (Updated)
+          </span>
+        )}
+      </div>
     );
   };
 
   // Render payment status badge
-  const renderPaymentStatusBadge = (status) => {
+  const renderPaymentStatusBadge = (status, orderId) => {
+    const isUpdated = orderUpdates.get(orderId)?.isUpdated;
     const statusStyles = {
       pending: "bg-yellow-100 text-yellow-800",
       paid: "bg-green-100 text-green-800",
@@ -137,11 +208,18 @@ const OrdersPage = () => {
     };
 
     return (
-      <span
-        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusStyles[status] || "bg-gray-100 text-gray-800"}`}
-      >
-        {status}
-      </span>
+      <div className="flex items-center">
+        <span
+          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusStyles[status] || "bg-gray-100 text-gray-800"}`}
+        >
+          {status}
+        </span>
+        {isUpdated && (
+          <span className="ml-1 text-xs text-blue-600 animate-pulse">
+            (Updated)
+          </span>
+        )}
+      </div>
     );
   };
 
@@ -338,10 +416,13 @@ const OrdersPage = () => {
                         ৳{parseFloat(order.total || 0).toFixed(2)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {renderStatusBadge(order.status)}
+                        {renderStatusBadge(order.status, order.id)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {renderPaymentStatusBadge(order.payment_status)}
+                        {renderPaymentStatusBadge(
+                          order.payment_status,
+                          order.id,
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex flex-col space-y-2">

@@ -4,20 +4,67 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 
-// Create API slice for cart operations
-export const apiSlice = createApi({
-  reducerPath: "api",
-  baseQuery: fetchBaseQuery({
+// Helper function to get cookie by name
+const getCookie = (name) => {
+  const cookies = document.cookie.split(";").reduce((cookies, cookie) => {
+    const [cookieName, cookieValue] = cookie.trim().split("=");
+    cookies[cookieName] = cookieValue;
+    return cookies;
+  }, {});
+  return cookies[name] || null;
+};
+
+// Create baseQuery with token refresh handling
+const baseQueryWithReauth = async (args, api, extraOptions) => {
+  const baseQuery = fetchBaseQuery({
     baseUrl: API_BASE_URL,
     prepareHeaders: (headers) => {
-      // Get token from localStorage (matching existing auth pattern)
-      const token = localStorage.getItem("access_token");
+      // Get token from cookies for better security
+      const token = getCookie("access_token");
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
       }
       return headers;
     },
-  }),
+  });
+
+  let result = await baseQuery(args, api, extraOptions);
+
+  // If we get a 401, try to refresh the token
+  if (result.error && result.error.status === 401) {
+    // Try to refresh the token
+    try {
+      const refreshToken = getCookie("refresh_token");
+      if (refreshToken) {
+        const refreshResult = await baseQuery(
+          {
+            url: "/auth/token/refresh/",
+            method: "POST",
+            body: { refresh: refreshToken },
+          },
+          api,
+          extraOptions,
+        );
+
+        if (refreshResult.data?.access) {
+          // Retry the original request with new token
+          result = await baseQuery(args, api, extraOptions);
+        }
+      }
+    } catch (_refreshError) {
+      // If refresh fails, we don't need to manually clear cookies
+      // as the backend should handle this
+      console.warn("Token refresh failed, user will be logged out");
+    }
+  }
+
+  return result;
+};
+
+// Create API slice for cart operations
+export const apiSlice = createApi({
+  reducerPath: "api",
+  baseQuery: baseQueryWithReauth,
   tagTypes: ["Cart"],
   endpoints: (builder) => ({
     // Get cart endpoint

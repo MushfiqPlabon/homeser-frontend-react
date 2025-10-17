@@ -3,11 +3,16 @@
 // and providing next steps for the user.
 
 import { CheckCircleIcon, PrinterIcon } from "@heroicons/react/24/outline";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { useWebSocket } from "../context/WebSocketContext";
 import { useGetUserOrdersQuery } from "../store/apiSlice";
 
 const PaymentSuccess = () => {
   const { orderId } = useParams();
+  const { isConnected, subscribeToOrder } = useWebSocket();
+  const [realTimeOrder, setRealTimeOrder] = useState(null);
+  const [orderUpdates, setOrderUpdates] = useState(new Map());
 
   const {
     data: userOrders,
@@ -15,6 +20,58 @@ const PaymentSuccess = () => {
     isError,
     error,
   } = useGetUserOrdersQuery();
+
+  // Find the specific order by ID and apply real-time updates
+  useEffect(() => {
+    if (userOrders && orderId) {
+      const baseOrder = userOrders.find(
+        (order) => order.id === parseInt(orderId, 10),
+      );
+
+      if (baseOrder) {
+        const update = orderUpdates.get(parseInt(orderId, 10));
+        if (update) {
+          setRealTimeOrder({ ...baseOrder, ...update });
+        } else {
+          setRealTimeOrder(baseOrder);
+        }
+      }
+    }
+  }, [userOrders, orderId, orderUpdates]);
+
+  // Subscribe to WebSocket events for order updates
+  useEffect(() => {
+    if (!isConnected || !orderId) return;
+
+    // Subscribe to this specific order
+    subscribeToOrder(parseInt(orderId, 10));
+
+    // Handle order status updates
+    const handleOrderUpdate = (data) => {
+      if (data.order_id === parseInt(orderId, 10)) {
+        setOrderUpdates((prev) => {
+          const newUpdates = new Map(prev);
+          newUpdates.set(data.order_id, {
+            status: data.status,
+            payment_status: data.payment_status,
+            timestamp: data.timestamp,
+            isUpdated: true,
+          });
+          return newUpdates;
+        });
+      }
+    };
+
+    // Add event listener for WebSocket events
+    window.addEventListener("orderUpdate", (e) => {
+      handleOrderUpdate(e.detail);
+    });
+
+    // Cleanup on unmount
+    return () => {
+      window.removeEventListener("orderUpdate", handleOrderUpdate);
+    };
+  }, [isConnected, orderId, subscribeToOrder]);
 
   if (isLoading) {
     return (
@@ -52,10 +109,8 @@ const PaymentSuccess = () => {
     );
   }
 
-  // Find the specific order by ID
-  const orderDetails = userOrders?.find(
-    (order) => order.id === parseInt(orderId, 10),
-  );
+  // Use the real-time order data if available, otherwise fall back to the base order
+  const orderDetails = realTimeOrder;
 
   if (!orderDetails) {
     return (
@@ -110,15 +165,45 @@ const PaymentSuccess = () => {
               </div>
               <div className="flex justify-between">
                 <span>Status:</span>
-                <span className="font-medium text-green-600">
-                  {orderDetails.status}
-                </span>
+                <div className="flex items-center">
+                  <span
+                    className={`font-medium ${
+                      orderDetails.status === "completed"
+                        ? "text-green-600"
+                        : orderDetails.status === "cancelled"
+                          ? "text-red-600"
+                          : "text-blue-600"
+                    }`}
+                  >
+                    {orderDetails.status}
+                  </span>
+                  {orderUpdates.get(parseInt(orderId, 10))?.isUpdated && (
+                    <span className="ml-2 text-xs text-blue-600 animate-pulse">
+                      (Updated)
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="flex justify-between">
                 <span>Payment:</span>
-                <span className="font-medium text-green-600">
-                  {orderDetails.payment_status}
-                </span>
+                <div className="flex items-center">
+                  <span
+                    className={`font-medium ${
+                      orderDetails.payment_status === "paid"
+                        ? "text-green-600"
+                        : orderDetails.payment_status === "failed"
+                          ? "text-red-600"
+                          : "text-blue-600"
+                    }`}
+                  >
+                    {orderDetails.payment_status}
+                  </span>
+                  {orderUpdates.get(parseInt(orderId, 10))?.isUpdated && (
+                    <span className="ml-2 text-xs text-blue-600 animate-pulse">
+                      (Updated)
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="flex justify-between">
                 <span>Total:</span>

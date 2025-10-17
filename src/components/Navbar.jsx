@@ -9,6 +9,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useGetCartQuery } from "../store/apiSlice";
+import NotificationBell from "./NotificationBell";
 
 const Navbar = () => {
   // State to control the visibility of the mobile navigation menu.
@@ -78,6 +79,9 @@ const Navbar = () => {
                     </span>
                   )}
                 </Link>
+
+                {/* Notifications */}
+                <NotificationBell />
 
                 {/* User Menu */}
                 <div className="relative group">
@@ -187,6 +191,10 @@ const Navbar = () => {
                   >
                     Dashboard
                   </Link>
+                  {/* Notification Bell in Mobile Menu */}
+                  <div className="px-3 py-2">
+                    <NotificationBell />
+                  </div>
                   {isAdmin && (
                     <Link
                       to="/admin-dashboard"

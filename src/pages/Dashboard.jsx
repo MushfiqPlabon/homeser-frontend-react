@@ -13,6 +13,10 @@ import { useEffect, useId, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PermissionGuard from "../components/PermissionGuard";
 import { useAuth } from "../context/AuthContext";
+import {
+  useDeleteServiceProviderServiceMutation,
+  useGetServiceProviderServicesQuery,
+} from "../store/extendedApiSlice";
 import { ordersAPI } from "../utils/api";
 
 const Dashboard = () => {
@@ -21,6 +25,10 @@ const Dashboard = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [_services, _setServices] = useState([]);
+  const [_servicesLoading, _setServicesLoading] = useState(false);
+  const [_servicesError, _setServicesError] = useState("");
+  const [deletionError, setDeletionError] = useState("");
   const navigate = useNavigate();
 
   // Generate unique IDs for form elements
@@ -31,11 +39,47 @@ const Dashboard = () => {
   const emailNotificationsCheckboxId = useId();
   const smsNotificationsCheckboxId = useId();
 
+  // Service provider services query and mutation hooks
+  const {
+    data: serviceProviderServicesData,
+    isLoading: serviceProviderServicesLoading,
+    error: serviceProviderServicesError,
+    refetch: refetchServiceProviderServices,
+  } = useGetServiceProviderServicesQuery(undefined, {
+    skip: activeTab !== "services" || !isAuthenticated,
+  });
+
+  const [deleteServiceProviderService] =
+    useDeleteServiceProviderServiceMutation();
+
   useEffect(() => {
     if (!isAuthenticated) {
       navigate("/login");
     }
   }, [navigate, isAuthenticated]);
+
+  // Fetch user's orders when the component mounts or when the orders tab is selected
+  useEffect(() => {
+    if (isAuthenticated && activeTab === "orders") {
+      const fetchOrders = async () => {
+        try {
+          setLoading(true);
+          setError("");
+          const response = await ordersAPI.getUserOrders();
+          // Ensure orders is always an array
+          const ordersData = response.data?.data || response.data || [];
+          setOrders(Array.isArray(ordersData) ? ordersData : []);
+        } catch (err) {
+          setError("Failed to load orders");
+          console.error("Error fetching orders:", err);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchOrders();
+    }
+  }, [isAuthenticated, activeTab]);
 
   // Fetch user's orders when the component mounts or when the orders tab is selected
   useEffect(() => {
@@ -390,63 +434,136 @@ const Dashboard = () => {
             }
           >
             <div className="space-y-6">
+              {/* Services Header */}
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold text-gray-900">
                   My Services
                 </h3>
-                <button type="button" className="btn-primary">
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={() => navigate("/dashboard/services/new")}
+                >
                   Add New Service
                 </button>
               </div>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-blue-800">
-                  As a service provider, you can manage your services here.
-                </p>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="border border-gray-200 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900">Service 1</h4>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Description of service
-                  </p>
-                  <div className="mt-2 flex space-x-2">
-                    <button
-                      type="button"
-                      onClick={() => navigate("/dashboard/services/1")}
-                      className="text-sm text-blue-600 hover:text-blue-800"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="text-sm text-red-600 hover:text-red-800"
-                    >
-                      Delete
-                    </button>
-                  </div>
+
+              {/* Deletion Error Message */}
+              {deletionError && (
+                <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-4">
+                  <p className="text-red-800">{deletionError}</p>
+                  <button
+                    type="button"
+                    className="mt-2 text-sm text-red-600 hover:text-red-800 font-medium"
+                    onClick={() => setDeletionError("")}
+                  >
+                    Dismiss
+                  </button>
                 </div>
-                <div className="border border-gray-200 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900">Service 2</h4>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Description of service
-                  </p>
-                  <div className="mt-2 flex space-x-2">
-                    <button
-                      type="button"
-                      onClick={() => navigate("/dashboard/services/2")}
-                      className="text-sm text-blue-600 hover:text-blue-800"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="text-sm text-red-600 hover:text-red-800"
-                    >
-                      Delete
-                    </button>
-                  </div>
+              )}
+
+              {/* Loading State */}
+              {serviceProviderServicesLoading && (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
                 </div>
-              </div>
+              )}
+
+              {/* Error State */}
+              {serviceProviderServicesError && (
+                <div className="bg-red-50 border border-red-200 rounded-md p-4">
+                  <p className="text-red-800">
+                    Failed to load services:{" "}
+                    {serviceProviderServicesError?.data?.message ||
+                      serviceProviderServicesError?.error ||
+                      "Unknown error"}
+                  </p>
+                </div>
+              )}
+
+              {/* Services List */}
+              {!serviceProviderServicesLoading &&
+                !serviceProviderServicesError &&
+                (serviceProviderServicesData &&
+                serviceProviderServicesData.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {serviceProviderServicesData.map((service) => (
+                      <div
+                        key={service.id}
+                        className="border border-gray-200 rounded-lg p-4"
+                      >
+                        <h4 className="font-medium text-gray-900">
+                          {service.name}
+                        </h4>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {service.short_desc}
+                        </p>
+                        <p className="text-sm text-gray-700 mt-2">
+                          Price: ৳{service.price}
+                        </p>
+                        <div className="mt-3 flex space-x-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              navigate(`/dashboard/services/${service.id}/edit`)
+                            }
+                            className="text-sm text-blue-600 hover:text-blue-800"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (
+                                window.confirm(
+                                  `Are you sure you want to delete ${service.name}?`,
+                                )
+                              ) {
+                                try {
+                                  await deleteServiceProviderService(
+                                    service.id,
+                                  ).unwrap();
+                                  refetchServiceProviderServices(); // Refresh the list after deletion
+                                  setDeletionError(""); // Clear any previous deletion errors
+                                } catch (error) {
+                                  console.error(
+                                    "Error deleting service:",
+                                    error,
+                                  );
+                                  const errorMessage =
+                                    error?.data?.message ||
+                                    error?.error ||
+                                    "Failed to delete service. Please try again.";
+                                  setDeletionError(errorMessage);
+                                }
+                              }
+                            }}
+                            className="text-sm text-red-600 hover:text-red-800"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 rounded-lg p-8 text-center">
+                    <WrenchScrewdriverIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">No services found</p>
+                    <p className="text-sm text-gray-500 mt-2">
+                      Services you manage will appear here.
+                    </p>
+                    <div className="mt-6">
+                      <button
+                        type="button"
+                        onClick={() => navigate("/dashboard/services/new")}
+                        className="btn-primary"
+                      >
+                        Add Your First Service
+                      </button>
+                    </div>
+                  </div>
+                ))}
             </div>
           </PermissionGuard>
         );

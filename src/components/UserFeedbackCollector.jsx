@@ -3,10 +3,12 @@
 
 import { ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
 import { useId, useState } from "react";
+import { useToast } from "../context/ToastContext";
 import { useUserFeedback } from "../utils/userFeedback";
 
 const UserFeedbackCollector = () => {
   const { collectFeedback } = useUserFeedback();
+  const { showToast } = useToast();
   const feedbackTypeId = useId();
   const messageTypeId = useId();
   const ratingLabelId = useId();
@@ -52,7 +54,7 @@ const UserFeedbackCollector = () => {
       }, 2000);
     } catch (error) {
       console.error("Failed to submit feedback:", error);
-      alert("Failed to submit feedback. Please try again.");
+      showToast("Failed to submit feedback. Please try again.", "error");
     } finally {
       setIsSubmitting(false);
     }

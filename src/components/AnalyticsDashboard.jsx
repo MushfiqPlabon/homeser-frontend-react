@@ -221,7 +221,7 @@ const AnalyticsDashboard = () => {
                 </div>
               ) : (
                 <ul className="space-y-3">
-                  {popularSearches?.popular_searches?.map((search) => (
+                  {popularSearches?.popular_searches?.map((search, index) => (
                     <li
                       key={search.id || search.query}
                       className="flex justify-between items-center"

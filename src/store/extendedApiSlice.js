@@ -1,23 +1,14 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { baseQueryWithToastsAndNotifications } from "./baseQueryWithToasts";
 
 // Determine the base URL for API requests
-const API_BASE_URL =
+const _API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 
 // Create API slice for extended functionality
 export const extendedApiSlice = createApi({
   reducerPath: "extendedApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: API_BASE_URL,
-    prepareHeaders: (headers) => {
-      // Get token from localStorage (matching existing auth pattern)
-      const token = localStorage.getItem("access_token");
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
+  baseQuery: baseQueryWithToastsAndNotifications,
   tagTypes: [
     "Service",
     "ExtendedService",
@@ -28,6 +19,7 @@ export const extendedApiSlice = createApi({
     "Order",
     "Payment",
     "Search",
+    "Settings",
   ],
   endpoints: (builder) => ({
     // Extended Services Endpoints
@@ -140,10 +132,68 @@ export const extendedApiSlice = createApi({
       invalidatesTags: ["Service"],
     }),
 
+    // Service Provider Services Endpoints
+    getServiceProviderServices: builder.query({
+      query: (params) => ({
+        url: "/provider/services/",
+        params,
+      }),
+      providesTags: ["Service"],
+    }),
+
+    getServiceProviderService: builder.query({
+      query: (id) => `/provider/services/${id}/`,
+      providesTags: (_result, _error, id) => [{ type: "Service", id }],
+    }),
+
+    createServiceProviderService: builder.mutation({
+      query: (serviceData) => ({
+        url: "/provider/services/",
+        method: "POST",
+        body: serviceData,
+      }),
+      invalidatesTags: ["Service"],
+    }),
+
+    updateServiceProviderService: builder.mutation({
+      query: ({ id, serviceData }) => ({
+        url: `/provider/services/${id}/`,
+        method: "PUT",
+        body: serviceData,
+      }),
+      invalidatesTags: (_result, _error, { id }) => [
+        { type: "Service", id },
+        "Service",
+      ],
+    }),
+
+    partialUpdateServiceProviderService: builder.mutation({
+      query: ({ id, serviceData }) => ({
+        url: `/provider/services/${id}/`,
+        method: "PATCH",
+        body: serviceData,
+      }),
+      invalidatesTags: (_result, _error, { id }) => [
+        { type: "Service", id },
+        "Service",
+      ],
+    }),
+
+    deleteServiceProviderService: builder.mutation({
+      query: (id) => ({
+        url: `/provider/services/${id}/`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Service"],
+    }),
+
     // Service Reviews Endpoints
     getServiceReviews: builder.query({
       query: (serviceId) => `/services/${serviceId}/reviews/`,
-      providesTags: ["Review"],
+      providesTags: (_result, _error, serviceId) => [
+        { type: "Review", id: `SERVICE_REVIEWS_${serviceId}` },
+        "Review",
+      ],
     }),
 
     createServiceReview: builder.mutation({
@@ -152,39 +202,157 @@ export const extendedApiSlice = createApi({
         method: "POST",
         body: reviewData,
       }),
-      invalidatesTags: ["Review"],
+      onQueryStarted: async (
+        { serviceId, reviewData },
+        { dispatch, queryFulfilled },
+      ) => {
+        // Optimistically update the cache
+        const patchResult = dispatch(
+          extendedApiSlice.util.updateQueryData(
+            "getServiceReviews",
+            serviceId,
+            (draft) => {
+              // Add the new review with a temporary ID
+              draft.unshift({
+                id: Date.now(), // temporary ID
+                ...reviewData,
+                user: {
+                  id: reviewData.user_id || null,
+                  username: reviewData.username || "Current User",
+                  first_name: reviewData.first_name || "",
+                },
+                created: new Date().toISOString(),
+                updated: new Date().toISOString(),
+                isOptimistic: true, // flag to identify optimistic update
+              });
+            },
+          ),
+        );
+
+        try {
+          const result = await queryFulfilled;
+          // Update the cache with the server response
+          dispatch(
+            extendedApiSlice.util.updateQueryData(
+              "getServiceReviews",
+              serviceId,
+              (draft) => {
+                const optimisticReviewIndex = draft.findIndex(
+                  (review) => review.isOptimistic,
+                );
+                if (optimisticReviewIndex !== -1) {
+                  // Replace the optimistic review with the server response
+                  draft[optimisticReviewIndex] = {
+                    ...draft[optimisticReviewIndex],
+                    ...result.data,
+                    isOptimistic: false, // remove the optimistic flag
+                  };
+                }
+              },
+            ),
+          );
+        } catch (_error) {
+          // Undo the optimistic update if the mutation fails
+          patchResult.undo();
+        }
+      },
+      invalidatesTags: (_result, _error, { serviceId }) => [
+        { type: "Review", id: `SERVICE_REVIEWS_${serviceId}` },
+        "Review",
+      ],
     }),
 
     updateServiceReview: builder.mutation({
-      query: ({ reviewId, reviewData }) => ({
+      query: ({ reviewId, /* serviceId, */ reviewData }) => ({
         url: `/reviews/${reviewId}/`,
         method: "PUT",
         body: reviewData,
       }),
-      invalidatesTags: (_result, _error, { reviewId }) => [
-        { type: "Review", reviewId },
+      onQueryStarted: async (
+        { reviewId, serviceId, reviewData },
+        { dispatch, queryFulfilled },
+      ) => {
+        // Optimistically update the cache
+        const patchResult = dispatch(
+          extendedApiSlice.util.updateQueryData(
+            "getServiceReviews",
+            serviceId,
+            (draft) => {
+              const reviewIndex = draft.findIndex(
+                (review) => review.id === reviewId,
+              );
+              if (reviewIndex !== -1) {
+                draft[reviewIndex] = {
+                  ...draft[reviewIndex],
+                  ...reviewData,
+                  updated: new Date().toISOString(),
+                };
+              }
+            },
+          ),
+        );
+
+        try {
+          await queryFulfilled;
+        } catch (_error) {
+          // Undo the optimistic update if the mutation fails
+          patchResult.undo();
+        }
+      },
+      invalidatesTags: (_result, _error, { serviceId }) => [
+        { type: "Review", id: `SERVICE_REVIEWS_${serviceId}` },
         "Review",
       ],
     }),
 
     partialUpdateServiceReview: builder.mutation({
-      query: ({ reviewId, reviewData }) => ({
+      query: ({ reviewId, /* serviceId, */ reviewData }) => ({
         url: `/reviews/${reviewId}/`,
         method: "PATCH",
         body: reviewData,
       }),
-      invalidatesTags: (_result, _error, { reviewId }) => [
-        { type: "Review", reviewId },
+      invalidatesTags: (_result, _error, { serviceId }) => [
+        { type: "Review", id: `SERVICE_REVIEWS_${serviceId}` },
         "Review",
       ],
     }),
 
     deleteServiceReview: builder.mutation({
-      query: (reviewId) => ({
+      query: ({ reviewId /* serviceId */ }) => ({
         url: `/reviews/${reviewId}/`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Review"],
+      onQueryStarted: async (
+        { reviewId, serviceId },
+        { dispatch, queryFulfilled },
+      ) => {
+        // Optimistically update the cache
+        const patchResult = dispatch(
+          extendedApiSlice.util.updateQueryData(
+            "getServiceReviews",
+            serviceId,
+            (draft) => {
+              const reviewIndex = draft.findIndex(
+                (review) => review.id === reviewId,
+              );
+              if (reviewIndex !== -1) {
+                draft.splice(reviewIndex, 1); // Remove the review
+              }
+            },
+          ),
+        );
+
+        try {
+          await queryFulfilled;
+        } catch (_error) {
+          // Undo the optimistic update if the mutation fails
+          patchResult.undo();
+        }
+      },
+      invalidatesTags: (_result, _error, { serviceId }) => [
+        { type: "Review", id: `SERVICE_REVIEWS_${serviceId}` },
+        "Review",
+      ],
     }),
 
     // Extended Categories Endpoints
@@ -256,6 +424,60 @@ export const extendedApiSlice = createApi({
         method: "POST",
         body: reviewData,
       }),
+      onQueryStarted: async (
+        { serviceId, reviewData },
+        { dispatch, queryFulfilled },
+      ) => {
+        // Optimistically update the cache
+        const patchResult = dispatch(
+          extendedApiSlice.util.updateQueryData(
+            "getServiceReviews",
+            serviceId,
+            (draft) => {
+              // Add the new review with a temporary ID
+              draft.unshift({
+                id: Date.now(), // temporary ID
+                ...reviewData,
+                user: {
+                  id: reviewData.user_id || null,
+                  username: reviewData.username || "Current User",
+                  first_name: reviewData.first_name || "",
+                },
+                created: new Date().toISOString(),
+                updated: new Date().toISOString(),
+                isOptimistic: true, // flag to identify optimistic update
+              });
+            },
+          ),
+        );
+
+        try {
+          const result = await queryFulfilled;
+          // Update the cache with the server response
+          dispatch(
+            extendedApiSlice.util.updateQueryData(
+              "getServiceReviews",
+              serviceId,
+              (draft) => {
+                const optimisticReviewIndex = draft.findIndex(
+                  (review) => review.isOptimistic,
+                );
+                if (optimisticReviewIndex !== -1) {
+                  // Replace the optimistic review with the server response
+                  draft[optimisticReviewIndex] = {
+                    ...draft[optimisticReviewIndex],
+                    ...result.data,
+                    isOptimistic: false, // remove the optimistic flag
+                  };
+                }
+              },
+            ),
+          );
+        } catch (_error) {
+          // Undo the optimistic update if the mutation fails
+          patchResult.undo();
+        }
+      },
       invalidatesTags: ["Review"],
     }),
 
@@ -342,7 +564,6 @@ export const extendedApiSlice = createApi({
       providesTags: ["Order"],
     }),
 
-
     updateOrderStatus: builder.mutation({
       query: ({ id, statusData }) => ({
         url: `/admin/orders/${id}/status/`,
@@ -415,6 +636,29 @@ export const extendedApiSlice = createApi({
         params,
       }),
       providesTags: ["Payment"],
+    }),
+
+    // Settings Management Endpoints
+    getSettings: builder.query({
+      query: () => "/settings/",
+      providesTags: ["Settings"],
+    }),
+
+    updateSettings: builder.mutation({
+      query: (settingsData) => ({
+        url: "/settings/",
+        method: "PUT",
+        body: settingsData,
+      }),
+      invalidatesTags: ["Settings"],
+    }),
+
+    clearCache: builder.mutation({
+      query: () => ({
+        url: "/settings/cache/clear/",
+        method: "POST",
+      }),
+      invalidatesTags: ["Settings"],
     }),
 
     // Payment Refund Endpoints
@@ -506,4 +750,17 @@ export const {
 
   // Sentiment Analytics
   useGetSentimentStatsQuery,
+
+  // Settings Management
+  useGetSettingsQuery,
+  useUpdateSettingsMutation,
+  useClearCacheMutation,
+
+  // Service Provider API hooks
+  useGetServiceProviderServicesQuery,
+  useGetServiceProviderServiceQuery,
+  useCreateServiceProviderServiceMutation,
+  useUpdateServiceProviderServiceMutation,
+  usePartialUpdateServiceProviderServiceMutation,
+  useDeleteServiceProviderServiceMutation,
 } = extendedApiSlice;

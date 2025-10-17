@@ -21,8 +21,10 @@ For technical recruiters: This frontend implements modern web development practi
 
 - **Architecture**: Component-based architecture with clean separation of concerns
 - **Performance**: Code splitting, lazy loading, and optimized bundle sizes for fast loading
-- **State Management**: Redux Toolkit and TanStack Query for efficient client and server state management
+- **State Management**: Redux Toolkit and RTK Query (Redux Toolkit Query) for efficient client and server state management
 - **Security**: JWT token handling and secure API communication
+- **Role Management**: Implementation of role-based access control for customers, service providers, and admins
+- **Real-time Features**: WebSocket integration for live order updates, payment status, and notifications
 - **Analytics Integration**: Real-time dashboards for email and sentiment analytics
 - **Development Tools**: Vite for fast builds, TypeScript for type safety, and automated testing
 
@@ -43,6 +45,11 @@ For technical recruiters: This frontend implements modern web development practi
 - Interactive elements and visual feedback for improved engagement
 - Personalized recommendations based on user behavior
 
+### Service Provider Experience
+- Dedicated dashboard for service providers to manage their services
+- Intuitive service creation and editing workflows
+- Real-time service management capabilities
+
 ## Quick Start
 
 1. **Clone the repository:**
@@ -60,6 +67,7 @@ For technical recruiters: This frontend implements modern web development practi
    Create a `.env` file with:
    ```
    VITE_API_BASE_URL=https://your-backend-deployment/api
+   VITE_WS_BASE_URL=ws://your-backend-deployment/ws
    ```
 
 4. **Start the development server:**
@@ -80,23 +88,48 @@ The frontend is configured for easy deployment on Vercel with:
 - **React 19**: Modern component-based architecture
 - **Vite**: Fast development server and build tool
 - **Redux Toolkit**: Predictable state management
-- **TanStack Query**: Server state management
+- **RTK Query**: Server state management with caching and optimistic updates
+- **Axios**: HTTP client with interceptors
 - **Tailwind CSS**: Utility-first styling framework
 - **React Router**: Client-side routing
 - **Axios**: HTTP client with interceptors
 - **Heroicons**: Consistent iconography
 
+## Real-time Features
+
+- **WebSocket Integration**: Full-featured WebSocket implementation with automatic reconnection
+- **Live Order Tracking**: Real-time order status updates with visual indicators
+- **Payment Notifications**: Live payment status updates during checkout process
+- **Live Notifications**: Real-time notifications with connection status indicators
+- **Optimistic Updates**: API operations with immediate UI feedback and rollback on failure
+- **Offline Queue**: Actions queued when offline and processed when connection is restored
+
+## Performance Optimizations
+
+- **Skeleton Screens**: Loading placeholders for better perceived performance
+- **Virtualized Lists**: Efficient rendering of large datasets using react-window
+- **Lazy Image Loading**: Optimized image loading with placeholder animations
+- **Code Splitting**: Component-level code splitting for faster initial load
+
+## UI/UX Enhancements
+
+- **Animations & Micro-interactions**: Framer Motion powered animations and interactive elements
+- **Responsive Design**: Mobile-first responsive design for all device sizes
+- **Accessibility**: Proper accessibility attributes and semantic HTML
+
 ## Features
 
-- Responsive design for all device sizes
 - User authentication (register/login)
 - Service browsing and search
 - Shopping cart functionality
 - Checkout and payment processing
 - User dashboard with order history
+- Service Provider Dashboard with ability to create and manage services
+- Create Service page for adding new services
+- Edit Service page for updating existing services
 - Admin dashboard with analytics
 - Email analytics dashboard
 - Sentiment analysis dashboard
 - Protected routes
 - Modern authentication with JWT
-- Real-time UI updates
+- Role-based access control (customer, service provider, admin)

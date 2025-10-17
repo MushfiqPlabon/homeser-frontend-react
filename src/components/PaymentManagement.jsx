@@ -8,7 +8,12 @@ import {
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import { useId, useState } from "react";
-import { useGetAdminOrdersQuery } from "../store/extendedApiSlice";
+import {
+  useGetAdminOrdersQuery,
+  useGetPaymentAnalyticsQuery,
+  useInitiateDisputeMutation,
+  useInitiateRefundMutation,
+} from "../store/extendedApiSlice";
 
 const PaymentManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -22,19 +27,13 @@ const PaymentManagement = () => {
   const refundReasonId = useId();
   const disputeReasonId = useId();
 
-  // Placeholder for payment analytics since the endpoint doesn't exist
-  const paymentAnalytics = {
-    total_revenue: 0,
-    total_orders: 0,
-    success_rate: 0,
-  };
-  const analyticsLoading = false;
-
-  // Placeholder functions for refund/dispute operations
-  const _initiateRefund = () => Promise.resolve();
-  const isRefunding = false;
-  const _initiateDispute = () => Promise.resolve();
-  const isDisputing = false;
+  // API hooks
+  const { data: paymentAnalytics, isLoading: analyticsLoading } =
+    useGetPaymentAnalyticsQuery();
+  const [initiateRefund, { isLoading: isRefunding }] =
+    useInitiateRefundMutation();
+  const [initiateDispute, { isLoading: isDisputing }] =
+    useInitiateDisputeMutation();
 
   const {
     data: orders,
@@ -53,12 +52,12 @@ const PaymentManagement = () => {
 
   const handleInitiateRefund = async () => {
     try {
-      // Placeholder for refund functionality since endpoint doesn't exist
-      console.log(
-        "Initiating refund for order:",
-        selectedPayment.id,
-        refundData,
-      );
+      const payload = {
+        payment_id: selectedPayment.id,
+        refund_amount: parseFloat(refundData.amount),
+        reason: refundData.reason,
+      };
+      await initiateRefund(payload).unwrap();
       setShowRefundModal(false);
       setRefundData({ amount: "", reason: "" });
       setSelectedPayment(null);
@@ -69,12 +68,11 @@ const PaymentManagement = () => {
 
   const handleInitiateDispute = async () => {
     try {
-      // Placeholder for dispute functionality since endpoint doesn't exist
-      console.log(
-        "Initiating dispute for order:",
-        selectedPayment.id,
-        disputeData,
-      );
+      const payload = {
+        payment_id: selectedPayment.id,
+        dispute_reason: disputeData.reason,
+      };
+      await initiateDispute(payload).unwrap();
       setShowDisputeModal(false);
       setDisputeData({ reason: "" });
       setSelectedPayment(null);

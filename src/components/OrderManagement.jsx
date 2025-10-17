@@ -8,7 +8,8 @@ import {
   ShoppingCartIcon,
   XCircleIcon,
 } from "@heroicons/react/24/outline";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useWebSocket } from "../context/WebSocketContext";
 import {
   useGetAdminOrdersQuery,
   useUpdateOrderStatusMutation,
@@ -17,6 +18,10 @@ import {
 const OrderManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
+  const { isConnected } = useWebSocket();
+
+  const [realTimeOrders, setRealTimeOrders] = useState([]);
+  const [orderUpdates, setOrderUpdates] = useState(new Map());
 
   const {
     data: orders,
@@ -26,6 +31,47 @@ const OrderManagement = () => {
   } = useGetAdminOrdersQuery();
   const [updateOrderStatus, { isLoading: isUpdating }] =
     useUpdateOrderStatusMutation();
+
+  // Update real-time orders when the API data changes
+  useEffect(() => {
+    if (orders) {
+      // Apply any real-time updates to the orders
+      const updatedOrders = orders.map((order) => {
+        const update = orderUpdates.get(order.id);
+        return update ? { ...order, ...update } : order;
+      });
+      setRealTimeOrders(updatedOrders);
+    }
+  }, [orders, orderUpdates]);
+
+  // Subscribe to WebSocket events for order updates
+  useEffect(() => {
+    if (!isConnected) return;
+
+    // Handle order status updates
+    const handleOrderUpdate = (data) => {
+      setOrderUpdates((prev) => {
+        const newUpdates = new Map(prev);
+        newUpdates.set(data.order_id, {
+          status: data.status,
+          payment_status: data.payment_status,
+          timestamp: data.timestamp,
+          isUpdated: true,
+        });
+        return newUpdates;
+      });
+    };
+
+    // Add event listener for WebSocket events
+    window.addEventListener("orderUpdate", (e) => {
+      handleOrderUpdate(e.detail);
+    });
+
+    // Cleanup on unmount
+    return () => {
+      window.removeEventListener("orderUpdate", handleOrderUpdate);
+    };
+  }, [isConnected]);
 
   const handleStatusChange = async (orderId, newStatus) => {
     try {
@@ -69,7 +115,7 @@ const OrderManagement = () => {
   ];
 
   // Filter orders based on search term and selected status
-  let filteredOrders = orders || [];
+  let filteredOrders = realTimeOrders || [];
   if (searchTerm) {
     filteredOrders = filteredOrders.filter(
       (order) =>
@@ -173,10 +219,22 @@ const OrderManagement = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200/50">
                 {filteredOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50/30">
+                  <tr
+                    key={order.id}
+                    className={`hover:bg-gray-50/30 ${
+                      orderUpdates.get(order.id)?.isUpdated
+                        ? "bg-blue-50/30 ring-1 ring-blue-200 animate-pulse"
+                        : ""
+                    }`}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-gray-900 flex items-center">
                         #{order.id}
+                        {orderUpdates.get(order.id)?.isUpdated && (
+                          <span className="ml-2 text-xs text-blue-600 animate-pulse">
+                            (Updated)
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -196,6 +254,11 @@ const OrderManagement = () => {
                         <span className="ml-2 text-sm text-gray-500 capitalize">
                           {order.status.replace("_", " ")}
                         </span>
+                        {orderUpdates.get(order.id)?.isUpdated && (
+                          <span className="ml-2 text-xs text-blue-600 animate-pulse">
+                            (Status Updated)
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

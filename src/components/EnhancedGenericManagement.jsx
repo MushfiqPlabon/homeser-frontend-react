@@ -12,7 +12,7 @@ import {
   usePopularSearchesRTK,
   useSearchAnalyticsRTK,
 } from "../hooks/useApi";
-import AnalyticsDashboard from "./AnalyticsDashboard";
+import { AnalyticsDashboard } from "./";
 
 const EnhancedGenericManagement = () => {
   const [activeTab, setActiveTab] = useState("search");

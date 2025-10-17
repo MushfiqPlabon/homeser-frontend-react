@@ -2,10 +2,11 @@
 // This component displays the user's cart and allows modification of items
 
 import { ShoppingBagIcon } from "@heroicons/react/24/outline";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import LazyImage from "../components/LazyImage";
 import { useAuth } from "../context/AuthContext";
+import { useWebSocket } from "../context/WebSocketContext";
 import { useCart } from "../hooks/useCart";
 import { getFallbackImage } from "../utils/imageUtils";
 import { usePerformanceMonitor } from "../utils/performanceMonitoring";
@@ -15,6 +16,7 @@ const Cart = () => {
   const performanceMonitor = usePerformanceMonitor();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { isConnected } = useWebSocket();
 
   const {
     items,
@@ -29,6 +31,32 @@ const Cart = () => {
   } = useCart();
 
   const [updatingQuantities, setUpdatingQuantities] = useState({});
+  const [_cartUpdates, _setCartUpdates] = useState(new Map());
+
+  // Subscribe to WebSocket events for cart/service updates
+  useEffect(() => {
+    if (!isConnected) return;
+
+    // Handle service updates that might affect cart items
+    const handleServiceUpdate = (data) => {
+      // If a service in our cart gets updated (e.g., price change), we might want to refetch the cart
+      if (items?.some((item) => item.service.id === data.service_id)) {
+        // For now, refetch cart data to get updated prices/availability
+        // In a more efficient system, we might update specific items in real-time
+        console.log("Service update received:", data);
+      }
+    };
+
+    // Add event listeners for WebSocket events
+    window.addEventListener("serviceUpdate", (e) => {
+      handleServiceUpdate(e.detail);
+    });
+
+    // Cleanup on unmount
+    return () => {
+      window.removeEventListener("serviceUpdate", handleServiceUpdate);
+    };
+  }, [isConnected, items]);
 
   // Record cart load time
   const cartLoadId = `cart_load_${Date.now()}`;
@@ -36,8 +64,29 @@ const Cart = () => {
 
   // Check authentication
   if (!isAuthenticated) {
-    navigate("/login", { state: { from: { pathname: "/cart" } } });
-    return null;
+    // Don't redirect immediately in component render; let useEffect handle it
+    // This prevents the UI from disappearing during auth checks
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Please Log In
+          </h2>
+          <p className="text-gray-600 mb-6">
+            You need to be logged in to access your cart.
+          </p>
+          <button
+            type="button"
+            onClick={() =>
+              navigate("/login", { state: { from: { pathname: "/cart" } } })
+            }
+            className="btn-primary"
+          >
+            Log In to Continue
+          </button>
+        </div>
+      </div>
+    );
   }
 
   // Record cart load completion

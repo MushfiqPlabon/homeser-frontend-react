@@ -4,7 +4,7 @@ import { handleApiError } from "./errorHandler";
 // Determine the base URL for API requests.
 // It first tries to use the VITE_API_BASE_URL environment variable (e.g., for production builds),
 // and falls back to a local development URL if the environment variable is not set.
-const API_BASE_URL =
+export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 
 // Variable to store the promise for ongoing token refresh
@@ -19,7 +19,7 @@ const api = axios.create({
 });
 
 // Request interceptor: This function runs before each outgoing HTTP request.
-// Its purpose is to automatically attach the JWT access token from localStorage
+// Its purpose is to automatically attach the JWT access token from cookies
 // to the 'Authorization' header for protected endpoints only.
 api.interceptors.request.use(
   (config) => {
@@ -36,9 +36,16 @@ api.interceptors.request.use(
       config.url.includes(endpoint),
     );
 
-    // Only add auth header if it's not a public endpoint and token exists
-    if (!isPublicEndpoint && typeof localStorage !== "undefined") {
-      const token = localStorage.getItem("access_token");
+    // Only add auth header if it's not a public endpoint
+    if (!isPublicEndpoint) {
+      // Get token from cookies (document.cookie) if available
+      const cookies = document.cookie.split(";").reduce((cookies, cookie) => {
+        const [name, value] = cookie.trim().split("=");
+        cookies[name] = value;
+        return cookies;
+      }, {});
+
+      const token = cookies.access_token;
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -81,10 +88,6 @@ api.interceptors.response.use(
           const newToken = await refreshingTokenPromise;
           // Update the authorization header with the new token
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
-          // Store token in localStorage
-          if (typeof localStorage !== "undefined") {
-            localStorage.setItem("access_token", newToken);
-          }
           // Retry the original request with the new token
           return api(originalRequest);
         } catch (refreshError) {
@@ -99,10 +102,6 @@ api.interceptors.response.use(
         const newToken = await refreshingTokenPromise;
         // Update the authorization header with the new token
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
-        // Store token in localStorage
-        if (typeof localStorage !== "undefined") {
-          localStorage.setItem("access_token", newToken);
-        }
         // Retry the original request with the new token
         return api(originalRequest);
       } catch (refreshError) {
@@ -155,6 +154,20 @@ export const extendedServicesAPI = {
   partialUpdateExtendedService: (id, serviceData) =>
     api.patch(`/ext/services/${id}/`, serviceData),
   deleteExtendedService: (id) => api.delete(`/ext/services/${id}/`),
+};
+
+// Service Provider API
+export const serviceProviderAPI = {
+  getServiceProviderServices: (params = {}, config = {}) =>
+    api.get("/provider/services/", { params, ...config }),
+  getServiceProviderService: (id) => api.get(`/provider/services/${id}/`),
+  createServiceProviderService: (serviceData) =>
+    api.post("/provider/services/", serviceData),
+  updateServiceProviderService: (id, serviceData) =>
+    api.put(`/provider/services/${id}/`, serviceData),
+  partialUpdateServiceProviderService: (id, serviceData) =>
+    api.patch(`/provider/services/${id}/`, serviceData),
+  deleteServiceProviderService: (id) => api.delete(`/provider/services/${id}/`),
 };
 
 // Extended Categories API
@@ -210,54 +223,16 @@ export const ordersAPI = {
 
 // Cart API
 export const cartAPI = {
-  getCart: () => {
-    // Only fetch cart for authenticated users
-    const token =
-      typeof localStorage !== "undefined"
-        ? localStorage.getItem("access_token")
-        : null;
-    if (!token) {
-      // Return a rejected promise for unauthenticated users
-      return Promise.reject(new Error("User not authenticated"));
-    }
-    return api.get("/cart/");
-  },
-  addToCart: (serviceId, quantity) => {
-    // Only add to cart for authenticated users
-    const token =
-      typeof localStorage !== "undefined"
-        ? localStorage.getItem("access_token")
-        : null;
-    if (!token) {
-      return Promise.reject(new Error("User not authenticated"));
-    }
-    return api.post("/cart/add/", { service_id: serviceId, qty: quantity });
-  },
-  removeFromCart: (serviceId) => {
-    // Only remove from cart for authenticated users
-    const token =
-      typeof localStorage !== "undefined"
-        ? localStorage.getItem("access_token")
-        : null;
-    if (!token) {
-      return Promise.reject(new Error("User not authenticated"));
-    }
-    return api.post("/cart/remove/", { service_id: serviceId });
-  },
-  updateCartItemQuantity: (serviceId, quantity) => {
-    // Only update cart item quantity for authenticated users
-    const token =
-      typeof localStorage !== "undefined"
-        ? localStorage.getItem("access_token")
-        : null;
-    if (!token) {
-      return Promise.reject(new Error("User not authenticated"));
-    }
-    return api.post("/cart/update-quantity/", {
+  getCart: () => api.get("/cart/"),
+  addToCart: (serviceId, quantity) =>
+    api.post("/cart/add/", { service_id: serviceId, qty: quantity }),
+  removeFromCart: (serviceId) =>
+    api.post("/cart/remove/", { service_id: serviceId }),
+  updateCartItemQuantity: (serviceId, quantity) =>
+    api.post("/cart/update-quantity/", {
       service_id: serviceId,
       qty: quantity,
-    });
-  },
+    }),
 };
 // Admin API
 export const adminAPI = {

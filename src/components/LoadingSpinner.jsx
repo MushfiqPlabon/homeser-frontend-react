@@ -1,32 +1,21 @@
-import { getSpinnerSizeClasses } from "../utils/shared/uiComponents";
+const LoadingSpinner = ({ size = "md", className = "" }) => {
+  // Define size classes
+  const sizeClasses = {
+    sm: "h-5 w-5 border-2",
+    md: "h-8 w-8 border-2",
+    lg: "h-12 w-12 border-2",
+    xl: "h-16 w-16 border-4",
+  };
 
-const LoadingSpinner = ({ size = "md", message = "", fullscreen = false }) => {
-  const spinner = (
-    <div
-      className={`${getSpinnerSizeClasses(size)} animate-spin rounded-full border-b-2 border-primary-600 backdrop-blur-sm bg-white/30 rounded-full p-1`}
-    ></div>
-  );
-
-  if (fullscreen) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
-        <div className="text-center">
-          {spinner}
-          {message && (
-            <p className="mt-4 text-lg font-medium text-gray-700 backdrop-blur-sm bg-white/30 rounded-xl p-2">
-              {message}
-            </p>
-          )}
-        </div>
-      </div>
-    );
-  }
+  const spinnerSize = sizeClasses[size] || sizeClasses.md;
 
   return (
-    <div className="flex items-center justify-center">
-      {spinner}
-      {message && <span className="ml-3 text-gray-700">{message}</span>}
-    </div>
+    <output
+      className={`animate-spin rounded-full border-b-2 border-primary-600 ${spinnerSize} ${className}`}
+      aria-label="loading"
+    >
+      <span className="sr-only">Loading...</span>
+    </output>
   );
 };
 

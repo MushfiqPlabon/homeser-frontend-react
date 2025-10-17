@@ -12,6 +12,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useId, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ProfileSkeleton } from "../components";
 import { useAuth } from "../context/AuthContext";
 import { useProfile, useUpdateProfile } from "../hooks/useApi";
 
@@ -171,8 +172,8 @@ const ProfilePage = () => {
 
   if (profileLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 backdrop-blur-sm bg-white/30 rounded-full p-2"></div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50 py-8">
+        <ProfileSkeleton />
       </div>
     );
   }

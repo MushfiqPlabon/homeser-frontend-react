@@ -6,6 +6,7 @@ import {
   useState,
 } from "react";
 import api, { authAPI, setTokenRefreshFunction } from "../utils/api";
+import { useToast } from "./ToastContext";
 
 const AuthContext = createContext();
 
@@ -22,6 +23,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { showToast } = useToast();
 
   // Store tokens in memory instead of localStorage for better security
   const [authTokens, setAuthTokens] = useState({
@@ -34,29 +36,31 @@ export const AuthProvider = ({ children }) => {
     setAuthTokens({ access: null, refresh: null });
     setUser(null);
 
-    // Also remove from localStorage as a fallback
-    if (typeof localStorage !== "undefined") {
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
-    }
-  }, []);
+    // Make a request to the logout endpoint to clear cookies on the backend
+    api
+      .post("/auth/logout/", {})
+      .catch((error) => {
+        // Ignore logout errors as we're clearing tokens anyway
+        console.warn("Logout endpoint error:", error);
+      })
+      .finally(() => {
+        // Show success toast regardless of backend response
+        showToast("You have been logged out successfully", "info");
+      });
+  }, [showToast]);
 
   // Refresh token function
   const refreshToken = useCallback(async () => {
     try {
-      // Get refresh token from memory or localStorage
-      const refreshTokenFromStorage =
-        authTokens.refresh ||
-        (typeof localStorage !== "undefined"
-          ? localStorage.getItem("refresh_token")
-          : null);
+      // Get refresh token from memory
+      const refreshTokenFromMemory = authTokens.refresh;
 
-      if (!refreshTokenFromStorage) {
+      if (!refreshTokenFromMemory) {
         throw new Error("No refresh token available");
       }
 
       const response = await api.post("/auth/token/refresh/", {
-        refresh: refreshTokenFromStorage,
+        refresh: refreshTokenFromMemory,
       });
 
       // Handle both standard and custom response formats
@@ -81,21 +85,14 @@ export const AuthProvider = ({ children }) => {
         refresh: refresh || prev.refresh, // Update refresh token only if provided (rotated)
       }));
 
-      // Also update in localStorage
-      if (typeof localStorage !== "undefined") {
-        localStorage.setItem("access_token", access);
-        if (refresh) {
-          localStorage.setItem("refresh_token", refresh);
-        }
-      }
-
       return access;
     } catch (error) {
       // If token refresh fails, log out the user
+      showToast("Your session has expired. Please log in again.", "warning");
       logout();
       throw error;
     }
-  }, [authTokens.refresh, logout]);
+  }, [authTokens.refresh, logout, showToast]);
 
   // Update the api instance with the current access token
   useEffect(() => {
@@ -109,81 +106,87 @@ export const AuthProvider = ({ children }) => {
     setTokenRefreshFunction(refreshToken);
   }, [refreshToken]);
 
-  const fetchUser = useCallback(async () => {
+  const _fetchUser = useCallback(async () => {
     try {
       const response = await authAPI.getProfile();
       setUser(response.data.user);
     } catch (error) {
       console.error("Failed to fetch user:", error);
+      showToast("Session expired. Please log in again.", "warning");
       logout();
     } finally {
       setLoading(false);
     }
-  }, [logout]);
+  }, [logout, showToast]);
 
   useEffect(() => {
     // This effect runs only once when the component mounts (due to empty dependency array []).
-    // It checks for an existing access token in localStorage (for backward compatibility)
-    // and attempts to fetch user data if a token is found.
-    const accessToken = localStorage.getItem("access_token");
-    const refreshTokenFromStorage = localStorage.getItem("refresh_token");
+    // In the new implementation, we don't check localStorage for tokens as we're using
+    // memory-only storage for better security.
+    setLoading(false);
+  }, []); // Empty dependency array means this effect runs once on mount.
 
-    if (accessToken && refreshTokenFromStorage) {
-      // Set tokens in memory
-      setAuthTokens({ access: accessToken, refresh: refreshTokenFromStorage });
-      fetchUser();
-    } else {
-      setLoading(false);
-    }
-  }, [fetchUser]); // Empty dependency array means this effect runs once on mount.
+  const login = useCallback(
+    async (credentials) => {
+      try {
+        const response = await authAPI.login(credentials);
+        const { access, refresh, user } = response.data;
 
-  const login = useCallback(async (credentials) => {
-    try {
-      const response = await authAPI.login(credentials);
-      const { access, refresh, user } = response.data;
+        // Store tokens in memory
+        setAuthTokens({ access, refresh });
 
-      // Store tokens in memory
-      setAuthTokens({ access, refresh });
+        setUser(user);
 
-      // Also store in localStorage for persistence across page refreshes
-      // Note: This is a compromise for UX, but we should consider more secure alternatives
-      localStorage.setItem("access_token", access);
-      localStorage.setItem("refresh_token", refresh);
+        // Show success toast
+        showToast(
+          `Welcome back, ${user.first_name || user.username}!`,
+          "success",
+        );
 
-      setUser(user);
+        return { success: true };
+      } catch (error) {
+        // Show error toast
+        showToast(error.response?.data?.detail || "Login failed", "error");
 
-      return { success: true };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.detail || "Login failed",
-      };
-    }
-  }, []);
+        return {
+          success: false,
+          error: error.response?.data?.detail || "Login failed",
+        };
+      }
+    },
+    [showToast],
+  );
 
-  const register = useCallback(async (userData) => {
-    try {
-      const response = await authAPI.register(userData);
-      const { access, refresh, user } = response.data;
+  const register = useCallback(
+    async (userData) => {
+      try {
+        const response = await authAPI.register(userData);
+        const { access, refresh, user } = response.data;
 
-      // Store tokens in memory
-      setAuthTokens({ access, refresh });
+        // Store tokens in memory
+        setAuthTokens({ access, refresh });
 
-      // Also store in localStorage for persistence across page refreshes
-      // Note: This is a compromise for UX, but we should consider more secure alternatives
-      localStorage.setItem("access_token", access);
-      localStorage.setItem("refresh_token", refresh);
+        setUser(user);
 
-      setUser(user);
+        // Show success toast
+        showToast(
+          `Welcome to HomeSer, ${user.first_name || user.username}!`,
+          "success",
+        );
 
-      return { success: true };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data || "Registration failed",
-      };
-    }
-  }, []);
+        return { success: true };
+      } catch (error) {
+        // Show error toast
+        showToast(error.response?.data || "Registration failed", "error");
+
+        return {
+          success: false,
+          error: error.response?.data || "Registration failed",
+        };
+      }
+    },
+    [showToast],
+  );
 
   // Check if user has a specific permission
   const hasPermission = useCallback(
@@ -230,13 +233,29 @@ export const AuthProvider = ({ children }) => {
         return !user.is_staff;
       }
 
-      if (role === "provider") {
-        // In the current backend implementation, service providers are also non-staff users
-        // but they have services. We'll check if they have the add_service permission
-        if (user.permissions && Array.isArray(user.permissions)) {
-          return user.permissions.includes("services.add_service");
+      if (role === "provider" || role === "service_provider") {
+        // Check if user has service provider permissions
+        if (user.permissions && typeof user.permissions === "object") {
+          // Check for add_service permission
+          if (user.permissions["services.add_service"]) {
+            return true;
+          }
+          // Check for change_service permission (indicates ownership)
+          for (const perm in user.permissions) {
+            if (perm.startsWith("services.change_service")) {
+              return true;
+            }
+          }
         }
-        // For now, we'll assume non-staff users could be providers
+        // We can also check if user has any services
+        if (
+          user.services &&
+          Array.isArray(user.services) &&
+          user.services.length > 0
+        ) {
+          return true;
+        }
+        // For now, we'll assume non-staff users could be providers (they can request provider status)
         return !user.is_staff;
       }
 
@@ -255,7 +274,11 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: !!user,
     isAdmin: user?.is_staff || false,
     isCustomer: user && !user.is_staff, // All non-staff users are customers
-    isProvider: user && !user.is_staff, // All non-staff users could be providers
+    isProvider:
+      user &&
+      !user.is_staff &&
+      (user.permissions?.includes("services.add_service") ||
+        (user.services && user.services.length > 0)), // Users with provider permissions or services
     isSuperUser: user?.is_superuser || false,
     // Expose tokens for components that need them
     tokens: authTokens,
