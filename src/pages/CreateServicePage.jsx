@@ -1,15 +1,26 @@
 // CreateServicePage.jsx
 // This page component allows service providers to create new services
 
-import { useState, useId } from "react";
+import { useId, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useCreateServiceProviderServiceMutation } from "../store/extendedApiSlice";
 import LoadingSpinner from "../components/LoadingSpinner";
+import { useCreateServiceProviderServiceMutation } from "../store/extendedApiSlice";
+import {
+  sanitizeServiceDescription,
+  sanitizeServiceName,
+  sanitizeTextareaInput,
+  validateServiceCategory,
+  validateServicePrice,
+} from "../utils/inputSanitization";
 
 const CreateServicePage = () => {
   const navigate = useNavigate();
   const [createService, { isLoading }] =
     useCreateServiceProviderServiceMutation();
+
+  // Rate limiting - prevent spam submissions
+  const lastSubmissionTime = useRef(0);
+  const MIN_SUBMISSION_INTERVAL = 3000; // 3 seconds between submissions
 
   const nameId = useId();
   const categoryId = useId();
@@ -38,9 +49,34 @@ const CreateServicePage = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    // Sanitize input based on field type
+    let sanitizedValue = value;
+    switch (name) {
+      case "name":
+        sanitizedValue = sanitizeServiceName(value);
+        break;
+      case "short_desc":
+        sanitizedValue = sanitizeServiceDescription(value, 300);
+        break;
+      case "description":
+        sanitizedValue = sanitizeTextareaInput(value);
+        break;
+      case "price":
+        // For price, we keep it as is but validate on submit
+        sanitizedValue = value;
+        break;
+      case "category":
+        // Keep category as is but validate on submit
+        sanitizedValue = value;
+        break;
+      default:
+        sanitizedValue = value;
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: sanitizedValue,
     }));
 
     // Clear error for this field when user starts typing
@@ -85,11 +121,21 @@ const CreateServicePage = () => {
 
     if (!formData.price) {
       newErrors.price = "Price is required";
-    } else if (
-      Number.isNaN(formData.price) ||
-      parseFloat(formData.price) <= 0
-    ) {
-      newErrors.price = "Price must be a positive number";
+    } else {
+      try {
+        validateServicePrice(formData.price);
+      } catch (_error) {
+        newErrors.price = "Price must be a positive number";
+      }
+    }
+
+    // Validate category
+    if (formData.category) {
+      try {
+        validateServiceCategory(formData.category, categories);
+      } catch (_error) {
+        newErrors.category = "Please select a valid category";
+      }
     }
 
     setErrors(newErrors);
@@ -99,26 +145,69 @@ const CreateServicePage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Rate limiting check
+    const currentTime = Date.now();
+    if (currentTime - lastSubmissionTime.current < MIN_SUBMISSION_INTERVAL) {
+      setErrors({
+        submit: `Please wait ${Math.ceil((MIN_SUBMISSION_INTERVAL - (currentTime - lastSubmissionTime.current)) / 1000)} seconds before submitting again.`,
+      });
+      return;
+    }
+
     if (!validateForm()) {
       return;
     }
 
+    // Update last submission time
+    lastSubmissionTime.current = currentTime;
+
     try {
+      // Sanitize and validate all data before sending
+      const serviceName = sanitizeServiceName(formData.name);
+      const serviceShortDesc = sanitizeServiceDescription(
+        formData.short_desc,
+        300,
+      );
+      const serviceDescription = sanitizeTextareaInput(formData.description);
+      const servicePrice = validateServicePrice(formData.price);
+      const serviceCategory = validateServiceCategory(
+        formData.category,
+        categories,
+      );
+
       const serviceData = {
-        ...formData,
-        price: parseFloat(formData.price),
-        category: parseInt(formData.category, 10),
+        name: serviceName,
+        category: serviceCategory,
+        short_desc: serviceShortDesc,
+        description: serviceDescription,
+        price: servicePrice,
       };
 
       await createService(serviceData).unwrap();
       navigate("/dashboard?activeTab=services"); // Navigate back to the dashboard services tab
     } catch (error) {
       console.error("Error creating service:", error);
+
+      // Reset submission time on error to allow retry
+      lastSubmissionTime.current = 0;
+
+      let errorMessage = "Failed to create service. Please try again.";
+
+      // Handle specific error cases
+      if (error?.data?.name) {
+        setErrors({ name: error.data.name[0] });
+      } else if (error?.data?.price) {
+        setErrors({ price: error.data.price[0] });
+      } else if (error?.data?.category) {
+        setErrors({ category: error.data.category[0] });
+      } else if (error?.data?.detail) {
+        errorMessage = error.data.detail;
+      } else if (error?.error) {
+        errorMessage = error.error;
+      }
+
       setErrors({
-        submit:
-          error?.data?.message ||
-          error?.error ||
-          "Failed to create service. Please try again.",
+        submit: errorMessage,
       });
     }
   };

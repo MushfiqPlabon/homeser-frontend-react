@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import ToastNotification from "../components/ToastNotification";
 
 const ToastContext = createContext();
@@ -13,6 +13,7 @@ export const useToast = () => {
 
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
+  const toastTimeouts = useRef(new Map()); // Store timeout IDs to clear them later
 
   const showToast = (message, type = "info", duration = 5000) => {
     const id = Date.now() + Math.random(); // Unique ID for each toast
@@ -21,14 +22,35 @@ export const ToastProvider = ({ children }) => {
     setToasts((prevToasts) => [...prevToasts, newToast]);
 
     // Remove toast after duration
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       setToasts((prevToasts) => prevToasts.filter((toast) => toast.id !== id));
+      toastTimeouts.current.delete(id); // Clean up the timeout reference
     }, duration);
+
+    // Store the timeout ID so we can clear it if needed
+    toastTimeouts.current.set(id, timeoutId);
   };
 
   const hideToast = (id) => {
     setToasts((prevToasts) => prevToasts.filter((toast) => toast.id !== id));
+
+    // Clear the timeout if it exists
+    const timeoutId = toastTimeouts.current.get(id);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      toastTimeouts.current.delete(id);
+    }
   };
+
+  // Clean up all timeouts when component unmounts
+  useEffect(() => {
+    return () => {
+      toastTimeouts.current.forEach((timeoutId) => {
+        clearTimeout(timeoutId);
+      });
+      toastTimeouts.current.clear();
+    };
+  }, []);
 
   return (
     <ToastContext.Provider value={{ showToast, hideToast }}>

@@ -4,7 +4,7 @@ import { handleApiError } from "./errorHandler";
 // Determine the base URL for API requests.
 // It first tries to use the VITE_API_BASE_URL environment variable (e.g., for production builds),
 // and falls back to a local development URL if the environment variable is not set.
-const API_BASE_URL =
+export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 
 // Variable to store the promise for ongoing token refresh
@@ -39,12 +39,12 @@ api.interceptors.request.use(
     // Only add auth header if it's not a public endpoint
     if (!isPublicEndpoint) {
       // Get token from cookies (document.cookie) if available
-      const cookies = document.cookie.split(';').reduce((cookies, cookie) => {
-        const [name, value] = cookie.trim().split('=');
+      const cookies = document.cookie.split(";").reduce((cookies, cookie) => {
+        const [name, value] = cookie.trim().split("=");
         cookies[name] = value;
         return cookies;
       }, {});
-      
+
       const token = cookies.access_token;
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;

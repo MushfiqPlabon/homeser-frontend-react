@@ -13,9 +13,9 @@ import {
 import { useEffect, useId, useState } from "react";
 import { useToast } from "../context/ToastContext";
 import {
+  useClearCacheMutation,
   useGetSettingsQuery,
   useUpdateSettingsMutation,
-  useClearCacheMutation,
 } from "../store/extendedApiSlice";
 
 const SettingsManagement = () => {

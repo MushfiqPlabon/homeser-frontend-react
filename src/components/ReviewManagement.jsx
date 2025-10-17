@@ -3,7 +3,8 @@
 
 import { PencilIcon, StarIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { StarIcon as StarIconSolid } from "@heroicons/react/24/solid";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
+import { useWebSocket } from "../context/WebSocketContext";
 import {
   useDeleteReviewMutation,
   useGetReviewsQuery,
@@ -14,6 +15,10 @@ const ReviewManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [editingReview, setEditingReview] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const { isConnected } = useWebSocket();
+
+  const [realTimeReviews, setRealTimeReviews] = useState([]);
+  const [reviewUpdates, setReviewUpdates] = useState(new Map());
 
   const isApprovedCheckboxId = useId();
 
@@ -26,6 +31,67 @@ const ReviewManagement = () => {
     text: "",
     is_approved: true,
   });
+
+  // Update real-time reviews when the API data changes
+  useEffect(() => {
+    if (reviews) {
+      // Apply any real-time updates to the reviews
+      const updatedReviews = reviews.map((review) => {
+        const update = reviewUpdates.get(review.id);
+        return update ? { ...review, ...update } : review;
+      });
+      setRealTimeReviews(updatedReviews);
+    }
+  }, [reviews, reviewUpdates]);
+
+  // Subscribe to WebSocket events for review updates
+  useEffect(() => {
+    if (!isConnected) return;
+
+    // Handle review updates
+    const handleReviewUpdate = (data) => {
+      setReviewUpdates((prev) => {
+        const newUpdates = new Map(prev);
+        newUpdates.set(data.review_id, {
+          ...data,
+          isUpdated: true,
+        });
+        return newUpdates;
+      });
+    };
+
+    // Handle review creation
+    const handleReviewCreate = (_data) => {
+      // For new reviews, refetch the reviews list
+      refetch();
+    };
+
+    // Handle review deletion
+    const handleReviewDelete = (_data) => {
+      // For deletions, refetch the reviews list
+      refetch();
+    };
+
+    // Add event listeners for WebSocket events
+    window.addEventListener("reviewUpdate", (e) => {
+      handleReviewUpdate(e.detail);
+    });
+
+    window.addEventListener("reviewCreate", (e) => {
+      handleReviewCreate(e.detail);
+    });
+
+    window.addEventListener("reviewDelete", (e) => {
+      handleReviewDelete(e.detail);
+    });
+
+    // Cleanup on unmount
+    return () => {
+      window.removeEventListener("reviewUpdate", handleReviewUpdate);
+      window.removeEventListener("reviewCreate", handleReviewCreate);
+      window.removeEventListener("reviewDelete", handleReviewDelete);
+    };
+  }, [isConnected, refetch]);
 
   const handleDeleteReview = async (reviewId) => {
     if (window.confirm("Are you sure you want to delete this review?")) {
@@ -69,7 +135,7 @@ const ReviewManagement = () => {
 
   // Filter reviews based on search term
   const filteredReviews =
-    reviews?.filter(
+    realTimeReviews?.filter(
       (review) =>
         review.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
         review.user?.username
@@ -136,10 +202,22 @@ const ReviewManagement = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200/50">
                 {filteredReviews.map((review) => (
-                  <tr key={review.id} className="hover:bg-gray-50/30">
+                  <tr
+                    key={review.id}
+                    className={`hover:bg-gray-50/30 ${
+                      reviewUpdates.get(review.id)?.isUpdated
+                        ? "bg-blue-50/30 ring-1 ring-blue-200 animate-pulse"
+                        : ""
+                    }`}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-gray-900 flex items-center">
                         {review.user?.username || "Anonymous"}
+                        {reviewUpdates.get(review.id)?.isUpdated && (
+                          <span className="ml-2 text-xs text-blue-600 animate-pulse">
+                            (Updated)
+                          </span>
+                        )}
                       </div>
                       <div className="text-sm text-gray-500">
                         {review.user?.email}

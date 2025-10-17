@@ -190,9 +190,9 @@ export const extendedApiSlice = createApi({
     // Service Reviews Endpoints
     getServiceReviews: builder.query({
       query: (serviceId) => `/services/${serviceId}/reviews/`,
-      providesTags: (result, error, serviceId) => [
+      providesTags: (_result, _error, serviceId) => [
         { type: "Review", id: `SERVICE_REVIEWS_${serviceId}` },
-        "Review"
+        "Review",
       ],
     }),
 
@@ -202,18 +202,103 @@ export const extendedApiSlice = createApi({
         method: "POST",
         body: reviewData,
       }),
-      invalidatesTags: (result, error, { serviceId }) => [
+      onQueryStarted: async (
+        { serviceId, reviewData },
+        { dispatch, queryFulfilled },
+      ) => {
+        // Optimistically update the cache
+        const patchResult = dispatch(
+          extendedApiSlice.util.updateQueryData(
+            "getServiceReviews",
+            serviceId,
+            (draft) => {
+              // Add the new review with a temporary ID
+              draft.unshift({
+                id: Date.now(), // temporary ID
+                ...reviewData,
+                user: {
+                  id: reviewData.user_id || null,
+                  username: reviewData.username || "Current User",
+                  first_name: reviewData.first_name || "",
+                },
+                created: new Date().toISOString(),
+                updated: new Date().toISOString(),
+                isOptimistic: true, // flag to identify optimistic update
+              });
+            },
+          ),
+        );
+
+        try {
+          const result = await queryFulfilled;
+          // Update the cache with the server response
+          dispatch(
+            extendedApiSlice.util.updateQueryData(
+              "getServiceReviews",
+              serviceId,
+              (draft) => {
+                const optimisticReviewIndex = draft.findIndex(
+                  (review) => review.isOptimistic,
+                );
+                if (optimisticReviewIndex !== -1) {
+                  // Replace the optimistic review with the server response
+                  draft[optimisticReviewIndex] = {
+                    ...draft[optimisticReviewIndex],
+                    ...result.data,
+                    isOptimistic: false, // remove the optimistic flag
+                  };
+                }
+              },
+            ),
+          );
+        } catch (_error) {
+          // Undo the optimistic update if the mutation fails
+          patchResult.undo();
+        }
+      },
+      invalidatesTags: (_result, _error, { serviceId }) => [
         { type: "Review", id: `SERVICE_REVIEWS_${serviceId}` },
-        "Review"
+        "Review",
       ],
     }),
 
     updateServiceReview: builder.mutation({
-      query: ({ reviewId, serviceId, reviewData }) => ({
+      query: ({ reviewId, /* serviceId, */ reviewData }) => ({
         url: `/reviews/${reviewId}/`,
         method: "PUT",
         body: reviewData,
       }),
+      onQueryStarted: async (
+        { reviewId, serviceId, reviewData },
+        { dispatch, queryFulfilled },
+      ) => {
+        // Optimistically update the cache
+        const patchResult = dispatch(
+          extendedApiSlice.util.updateQueryData(
+            "getServiceReviews",
+            serviceId,
+            (draft) => {
+              const reviewIndex = draft.findIndex(
+                (review) => review.id === reviewId,
+              );
+              if (reviewIndex !== -1) {
+                draft[reviewIndex] = {
+                  ...draft[reviewIndex],
+                  ...reviewData,
+                  updated: new Date().toISOString(),
+                };
+              }
+            },
+          ),
+        );
+
+        try {
+          await queryFulfilled;
+        } catch (_error) {
+          // Undo the optimistic update if the mutation fails
+          patchResult.undo();
+        }
+      },
       invalidatesTags: (_result, _error, { serviceId }) => [
         { type: "Review", id: `SERVICE_REVIEWS_${serviceId}` },
         "Review",
@@ -221,7 +306,7 @@ export const extendedApiSlice = createApi({
     }),
 
     partialUpdateServiceReview: builder.mutation({
-      query: ({ reviewId, serviceId, reviewData }) => ({
+      query: ({ reviewId, /* serviceId, */ reviewData }) => ({
         url: `/reviews/${reviewId}/`,
         method: "PATCH",
         body: reviewData,
@@ -233,13 +318,40 @@ export const extendedApiSlice = createApi({
     }),
 
     deleteServiceReview: builder.mutation({
-      query: ({ reviewId, serviceId }) => ({
+      query: ({ reviewId /* serviceId */ }) => ({
         url: `/reviews/${reviewId}/`,
         method: "DELETE",
       }),
+      onQueryStarted: async (
+        { reviewId, serviceId },
+        { dispatch, queryFulfilled },
+      ) => {
+        // Optimistically update the cache
+        const patchResult = dispatch(
+          extendedApiSlice.util.updateQueryData(
+            "getServiceReviews",
+            serviceId,
+            (draft) => {
+              const reviewIndex = draft.findIndex(
+                (review) => review.id === reviewId,
+              );
+              if (reviewIndex !== -1) {
+                draft.splice(reviewIndex, 1); // Remove the review
+              }
+            },
+          ),
+        );
+
+        try {
+          await queryFulfilled;
+        } catch (_error) {
+          // Undo the optimistic update if the mutation fails
+          patchResult.undo();
+        }
+      },
       invalidatesTags: (_result, _error, { serviceId }) => [
         { type: "Review", id: `SERVICE_REVIEWS_${serviceId}` },
-        "Review"
+        "Review",
       ],
     }),
 
@@ -312,6 +424,60 @@ export const extendedApiSlice = createApi({
         method: "POST",
         body: reviewData,
       }),
+      onQueryStarted: async (
+        { serviceId, reviewData },
+        { dispatch, queryFulfilled },
+      ) => {
+        // Optimistically update the cache
+        const patchResult = dispatch(
+          extendedApiSlice.util.updateQueryData(
+            "getServiceReviews",
+            serviceId,
+            (draft) => {
+              // Add the new review with a temporary ID
+              draft.unshift({
+                id: Date.now(), // temporary ID
+                ...reviewData,
+                user: {
+                  id: reviewData.user_id || null,
+                  username: reviewData.username || "Current User",
+                  first_name: reviewData.first_name || "",
+                },
+                created: new Date().toISOString(),
+                updated: new Date().toISOString(),
+                isOptimistic: true, // flag to identify optimistic update
+              });
+            },
+          ),
+        );
+
+        try {
+          const result = await queryFulfilled;
+          // Update the cache with the server response
+          dispatch(
+            extendedApiSlice.util.updateQueryData(
+              "getServiceReviews",
+              serviceId,
+              (draft) => {
+                const optimisticReviewIndex = draft.findIndex(
+                  (review) => review.isOptimistic,
+                );
+                if (optimisticReviewIndex !== -1) {
+                  // Replace the optimistic review with the server response
+                  draft[optimisticReviewIndex] = {
+                    ...draft[optimisticReviewIndex],
+                    ...result.data,
+                    isOptimistic: false, // remove the optimistic flag
+                  };
+                }
+              },
+            ),
+          );
+        } catch (_error) {
+          // Undo the optimistic update if the mutation fails
+          patchResult.undo();
+        }
+      },
       invalidatesTags: ["Review"],
     }),
 

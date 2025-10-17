@@ -37,10 +37,11 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
 
     // Make a request to the logout endpoint to clear cookies on the backend
-    api.post('/auth/logout/', {})
-      .catch(error => {
+    api
+      .post("/auth/logout/", {})
+      .catch((error) => {
         // Ignore logout errors as we're clearing tokens anyway
-        console.warn('Logout endpoint error:', error);
+        console.warn("Logout endpoint error:", error);
       })
       .finally(() => {
         // Show success toast regardless of backend response
@@ -105,7 +106,7 @@ export const AuthProvider = ({ children }) => {
     setTokenRefreshFunction(refreshToken);
   }, [refreshToken]);
 
-  const fetchUser = useCallback(async () => {
+  const _fetchUser = useCallback(async () => {
     try {
       const response = await authAPI.getProfile();
       setUser(response.data.user);

@@ -13,11 +13,11 @@ import { useEffect, useId, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PermissionGuard from "../components/PermissionGuard";
 import { useAuth } from "../context/AuthContext";
-import { ordersAPI } from "../utils/api";
 import {
-  useGetServiceProviderServicesQuery,
   useDeleteServiceProviderServiceMutation,
+  useGetServiceProviderServicesQuery,
 } from "../store/extendedApiSlice";
+import { ordersAPI } from "../utils/api";
 
 const Dashboard = () => {
   const { isAuthenticated, user } = useAuth();

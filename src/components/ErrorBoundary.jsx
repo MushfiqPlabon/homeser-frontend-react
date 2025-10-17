@@ -112,8 +112,11 @@ export class LoadingErrorBoundary extends Component {
     if (this.state.hasError) {
       return (
         <div className="bg-yellow-50/80 border border-yellow-200/50 text-yellow-700 px-4 py-3 rounded-md mb-6 backdrop-blur-sm">
-          <p>Warning: Unable to load content properly. {this.state.error?.toString() || 'An error occurred.'}</p>
-          <button 
+          <p>
+            Warning: Unable to load content properly.{" "}
+            {this.state.error?.toString() || "An error occurred."}
+          </p>
+          <button
             type="button"
             onClick={() => window.location.reload()}
             className="mt-2 btn-secondary text-sm"

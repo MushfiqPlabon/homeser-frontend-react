@@ -17,6 +17,7 @@ import { z } from "zod";
 // Import UI components and utilities
 import LazyImage from "../components/LazyImage";
 import { useAuth } from "../context/AuthContext";
+import { useWebSocket } from "../context/WebSocketContext";
 // Import required hooks
 import {
   useCreateReview,
@@ -30,7 +31,7 @@ import {
 } from "../store/extendedApiSlice";
 import { getFallbackImage } from "../utils/imageUtils";
 import { usePerformanceMonitor } from "../utils/performanceMonitoring";
-import { renderStars } from "../utils/uiUtils.jsx";
+import { formatDate, renderStars } from "../utils/uiUtils.jsx";
 
 // Define review schema
 const reviewSchema = z.object({
@@ -46,11 +47,17 @@ const ServiceDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
+  const { isConnected } = useWebSocket();
 
   const _quantitySelectId = useId();
   const reviewRatingId = useId();
   const reviewTextId = useId();
   const editReviewTextId = useId();
+
+  // State for real-time updates
+  const [realTimeService, setRealTimeService] = useState(null);
+  const [realTimeReviews, setRealTimeReviews] = useState([]);
+  const [serviceUpdates, setServiceUpdates] = useState(new Map());
 
   // Start timing service load
   const serviceLoadId = `service_load_${id}_${Date.now()}`;
@@ -62,11 +69,88 @@ const ServiceDetail = () => {
     isLoading: isLoadingService,
     error: errorService,
   } = useGetServiceQuery(id);
-  const { 
-    data: reviews, 
+  const {
+    data: reviews,
     error: reviewsError,
-    isLoading: isLoadingReviews
+    isLoading: isLoadingReviews,
   } = useGetServiceReviewsQuery(id);
+
+  // Combine base service with real-time updates
+  useEffect(() => {
+    if (service) {
+      const update = serviceUpdates.get(id);
+      if (update) {
+        setRealTimeService({ ...service, ...update });
+      } else {
+        setRealTimeService(service);
+      }
+    }
+  }, [service, id, serviceUpdates]);
+
+  // Set reviews when they load - handle paginated response with real-time updates
+  useEffect(() => {
+    if (reviews) {
+      // Check if the response is paginated (has 'results' field)
+      let reviewsList;
+      if (reviews.results !== undefined) {
+        // Handle paginated response
+        reviewsList = reviews.results;
+      } else if (Array.isArray(reviews)) {
+        // Handle direct array response
+        reviewsList = reviews;
+      } else {
+        // Default to empty array
+        reviewsList = [];
+      }
+      setRealTimeReviews(reviewsList);
+    } else {
+      setRealTimeReviews([]); // Ensure it's always an array
+    }
+  }, [reviews]);
+
+  // Subscribe to WebSocket events for service updates
+  useEffect(() => {
+    if (!isConnected || !id) return;
+
+    // Handle service updates
+    const handleServiceUpdate = (data) => {
+      if (data.service_id === parseInt(id, 10)) {
+        setServiceUpdates((prev) => {
+          const newUpdates = new Map(prev);
+          newUpdates.set(data.service_id, {
+            ...data,
+            isUpdated: true,
+          });
+          return newUpdates;
+        });
+      }
+    };
+
+    // Handle review updates
+    const handleReviewUpdate = (data) => {
+      // This would update the reviews list based on review changes
+      // Implementation depends on how review update messages are structured
+      console.log("Review update received:", data);
+
+      // For now, we'll refetch reviews when a review update comes
+      // In a more optimized system, we would update the specific review in the list
+    };
+
+    // Add event listeners for WebSocket events
+    window.addEventListener("serviceUpdate", (e) => {
+      handleServiceUpdate(e.detail);
+    });
+
+    window.addEventListener("reviewUpdate", (e) => {
+      handleReviewUpdate(e.detail);
+    });
+
+    // Cleanup on unmount
+    return () => {
+      window.removeEventListener("serviceUpdate", handleServiceUpdate);
+      window.removeEventListener("reviewUpdate", handleReviewUpdate);
+    };
+  }, [isConnected, id]);
 
   // Record service load time when service data arrives
   useEffect(() => {
@@ -95,7 +179,7 @@ const ServiceDetail = () => {
   const [submittingReview, setSubmittingReview] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  const [reviewsList, setReviews] = useState([]);
+  const [_reviewsList, setReviews] = useState([]);
 
   // Initialize form
   const {
@@ -134,7 +218,12 @@ const ServiceDetail = () => {
   // Handle reviews error
   useEffect(() => {
     if (reviewsError) {
-      setError("Failed to load reviews: " + (reviewsError.data?.message || reviewsError.message || "Unknown error"));
+      setError(
+        "Failed to load reviews: " +
+          (reviewsError.data?.message ||
+            reviewsError.message ||
+            "Unknown error"),
+      );
     }
   }, [reviewsError]);
 
@@ -167,7 +256,11 @@ const ServiceDetail = () => {
     try {
       if (editingReview) {
         // Update existing review
-        await updateReview({ reviewId: editingReview.id, serviceId: id, reviewData: data });
+        await updateReview({
+          reviewId: editingReview.id,
+          serviceId: id,
+          reviewData: data,
+        });
         setSuccessMessage("Review updated successfully!");
 
         // Update the review in the local state
@@ -196,15 +289,6 @@ const ServiceDetail = () => {
     } finally {
       setSubmittingReview(false);
     }
-  };
-
-  // Format date helper
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
   };
 
   // Handle edit review
@@ -292,7 +376,7 @@ const ServiceDetail = () => {
   }
 
   // Error state
-  if (errorService || !service) {
+  if (errorService || !realTimeService) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
         <div className="text-center card">
@@ -321,16 +405,16 @@ const ServiceDetail = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
           {/* Service Image */}
           <div className="card">
-            {service.image_url ? (
+            {realTimeService.image_url ? (
               <LazyImage
-                src={service.image_url}
-                alt={service.name}
+                src={realTimeService.image_url}
+                alt={realTimeService.name}
                 className="w-full h-96 rounded-lg shadow-md object-cover"
               />
             ) : (
               <LazyImage
-                src={getFallbackImage(service.name)}
-                alt={service.name}
+                src={getFallbackImage(realTimeService.name)}
+                alt={realTimeService.name}
                 className="w-full h-96 rounded-lg shadow-md object-cover"
               />
             )}
@@ -339,31 +423,43 @@ const ServiceDetail = () => {
           {/* Service Info */}
           <div className="space-y-6 card">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                {service.name}
+              <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center">
+                {realTimeService.name}
+                {serviceUpdates.get(parseInt(id, 10))?.isUpdated && (
+                  <span className="ml-2 text-sm text-blue-600 animate-pulse">
+                    (Updated)
+                  </span>
+                )}
               </h1>
-              <p className="text-lg text-gray-600">{service.short_desc}</p>
+              <p className="text-lg text-gray-600">
+                {realTimeService.short_desc}
+              </p>
             </div>
 
             {/* Rating */}
             <div>
-              {service.avg_rating > 0 ? (
-                renderStars(service.avg_rating)
+              {realTimeService.avg_rating > 0 ? (
+                renderStars(realTimeService.avg_rating)
               ) : (
                 <span className="text-gray-500">No ratings yet</span>
               )}
               <span className="text-sm text-gray-500 ml-4">
-                {service.review_count} review
-                {service.review_count !== 1 ? "s" : ""}
+                {realTimeService.review_count} review
+                {realTimeService.review_count !== 1 ? "s" : ""}
               </span>
             </div>
 
             {/* Price */}
             <div className="bg-primary-50/50 p-4 rounded-lg backdrop-blur-sm border border-primary-100/50">
               <span className="text-3xl font-bold text-primary-600">
-                ৳{service.price}
+                ৳{realTimeService.price}
               </span>
               <span className="text-gray-600 ml-2">per service</span>
+              {serviceUpdates.get(parseInt(id, 10))?.isUpdated && (
+                <span className="ml-2 text-sm text-blue-600 animate-pulse">
+                  (Updated just now)
+                </span>
+              )}
             </div>
 
             {/* Add to Cart */}
@@ -417,7 +513,7 @@ const ServiceDetail = () => {
         <div className="card">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900">
-              Reviews ({reviewsList.length})
+              Reviews ({realTimeReviews.length})
             </h2>
             {isAuthenticated && (
               <button
@@ -635,13 +731,15 @@ const ServiceDetail = () => {
           {/* Reviews List */}
           <div className="space-y-6">
             {isLoadingReviews ? (
-              <p className="text-gray-500 text-center py-8">Loading reviews...</p>
-            ) : reviewsList.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">
+                Loading reviews...
+              </p>
+            ) : realTimeReviews.length === 0 ? (
               <p className="text-gray-500 text-center py-8">
                 No reviews yet. Be the first to review this service!
               </p>
             ) : (
-              reviewsList.map((review) => (
+              realTimeReviews.map((review) => (
                 <div
                   key={review.id}
                   className="border-b border-gray-200/50 pb-6 last:border-0 last:pb-0"

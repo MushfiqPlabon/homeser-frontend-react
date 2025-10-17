@@ -8,9 +8,10 @@ import {
   TrashIcon,
 } from "@heroicons/react/24/outline";
 import { StarIcon } from "@heroicons/react/24/solid";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useWebSocket } from "../context/WebSocketContext";
 import {
   useDeleteReview,
   useUpdateReview,
@@ -20,6 +21,7 @@ import { renderStars } from "../utils/uiUtils.jsx";
 
 const ReviewsPage = () => {
   const { isAuthenticated } = useAuth();
+  const { isConnected } = useWebSocket();
   const navigate = useNavigate();
 
   const editReviewTextId = useId();
@@ -28,6 +30,8 @@ const ReviewsPage = () => {
   const [editForm, setEditForm] = useState({ rating: 5, text: "" });
   const [message, setMessage] = useState({ type: "", text: "" });
   const [deletingId, setDeletingId] = useState(null);
+  const [realTimeReviews, setRealTimeReviews] = useState([]);
+  const [reviewUpdates, setReviewUpdates] = useState(new Map());
 
   const {
     data: reviews,
@@ -38,6 +42,69 @@ const ReviewsPage = () => {
   } = useUserReviews();
   const [updateReview] = useUpdateReview();
   const [deleteReview] = useDeleteReview();
+
+  // Update real-time reviews when the API data changes
+  useEffect(() => {
+    if (reviews) {
+      // Apply any real-time updates to the reviews
+      const updatedReviews = reviews.map((review) => {
+        const update = reviewUpdates.get(review.id);
+        return update ? { ...review, ...update } : review;
+      });
+      setRealTimeReviews(updatedReviews);
+    }
+  }, [reviews, reviewUpdates]);
+
+  // Subscribe to WebSocket events for review updates
+  useEffect(() => {
+    if (!isConnected) return;
+
+    // Handle review updates
+    const handleReviewUpdate = (data) => {
+      setReviewUpdates((prev) => {
+        const newUpdates = new Map(prev);
+        newUpdates.set(data.review_id, {
+          ...data,
+          isUpdated: true,
+        });
+        return newUpdates;
+      });
+    };
+
+    // Handle review creation
+    const handleReviewCreate = (_data) => {
+      // For new reviews, we might need to refetch or add to the list
+      // For simplicity, we'll refetch the reviews list
+      refetch();
+    };
+
+    // Handle review deletion
+    const handleReviewDelete = (_data) => {
+      // For deletions, we might need to refetch or remove from the list
+      // For simplicity, we'll refetch the reviews list
+      refetch();
+    };
+
+    // Add event listeners for WebSocket events
+    window.addEventListener("reviewUpdate", (e) => {
+      handleReviewUpdate(e.detail);
+    });
+
+    window.addEventListener("reviewCreate", (e) => {
+      handleReviewCreate(e.detail);
+    });
+
+    window.addEventListener("reviewDelete", (e) => {
+      handleReviewDelete(e.detail);
+    });
+
+    // Cleanup on unmount
+    return () => {
+      window.removeEventListener("reviewUpdate", handleReviewUpdate);
+      window.removeEventListener("reviewCreate", handleReviewCreate);
+      window.removeEventListener("reviewDelete", handleReviewDelete);
+    };
+  }, [isConnected, refetch]);
 
   // Check authentication
   if (!isAuthenticated) {
@@ -158,7 +225,7 @@ const ReviewsPage = () => {
           </div>
         )}
 
-        {reviews?.length === 0 ? (
+        {realTimeReviews?.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-xl shadow-lg backdrop-blur-sm bg-white/80 border border-gray-200/50">
             <ChatBubbleLeftRightIcon className="mx-auto h-16 w-16 text-gray-400" />
             <h3 className="mt-4 text-lg font-medium text-gray-900">
@@ -179,10 +246,14 @@ const ReviewsPage = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {reviews?.map((review) => (
+            {realTimeReviews?.map((review) => (
               <div
                 key={review.id}
-                className="bg-white rounded-xl shadow-lg overflow-hidden backdrop-blur-sm bg-white/80 border border-gray-200/50 hover:shadow-xl transition-shadow"
+                className={`bg-white rounded-xl shadow-lg overflow-hidden backdrop-blur-sm bg-white/80 border border-gray-200/50 hover:shadow-xl transition-shadow ${
+                  reviewUpdates.get(review.id)?.isUpdated
+                    ? "ring-2 ring-blue-500 animate-pulse"
+                    : ""
+                }`}
               >
                 <div className="p-6">
                   <div className="flex items-center justify-between mb-4">
@@ -244,6 +315,11 @@ const ReviewsPage = () => {
                       <span className="ml-1 text-gray-900">
                         {formatDate(review.updated_at)}
                       </span>
+                      {reviewUpdates.get(review.id)?.isUpdated && (
+                        <span className="ml-2 text-xs text-blue-600 animate-pulse">
+                          (Updated)
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>

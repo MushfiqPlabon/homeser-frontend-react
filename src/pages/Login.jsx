@@ -43,7 +43,7 @@ const Login = () => {
         return { values: {}, errors: fieldErrors };
       }
     },
-    mode: "onChange",  // Enable real-time validation
+    mode: "onChange", // Enable real-time validation
     defaultValues: {
       email: "",
       password: "",
@@ -148,10 +148,10 @@ const Login = () => {
                   type="email"
                   autoComplete="email"
                   className={`input-field ${
-                    errors.email 
-                      ? "border-red-500" 
-                      : watch("email") && !errors.email 
-                        ? "border-green-500" 
+                    errors.email
+                      ? "border-red-500"
+                      : watch("email") && !errors.email
+                        ? "border-green-500"
                         : "border-gray-300"
                   }`}
                   placeholder="Email address"
@@ -160,12 +160,34 @@ const Login = () => {
                 {watch("email") && (
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                     {errors.email ? (
-                      <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      <svg
+                        className="h-5 w-5 text-red-500"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                        role="img"
+                        aria-label="Email field has an error"
+                      >
+                        <title>Email field has an error</title>
+                        <path
+                          fillRule="evenodd"
+                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     ) : (
-                      <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      <svg
+                        className="h-5 w-5 text-green-500"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                        role="img"
+                        aria-label="Email validation passed"
+                      >
+                        <title>Email validation passed</title>
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     )}
                   </div>
@@ -191,10 +213,10 @@ const Login = () => {
                   type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   className={`input-field pr-10 ${
-                    errors.password 
-                      ? "border-red-500" 
-                      : watch("password") && !errors.password 
-                        ? "border-green-500" 
+                    errors.password
+                      ? "border-red-500"
+                      : watch("password") && !errors.password
+                        ? "border-green-500"
                         : "border-gray-300"
                   }`}
                   placeholder="Password"
@@ -203,12 +225,34 @@ const Login = () => {
                 {watch("password") && (
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                     {errors.password ? (
-                      <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      <svg
+                        className="h-5 w-5 text-red-500"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                        role="img"
+                        aria-label="Password field has an error"
+                      >
+                        <title>Password field has an error</title>
+                        <path
+                          fillRule="evenodd"
+                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     ) : (
-                      <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      <svg
+                        className="h-5 w-5 text-green-500"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                        role="img"
+                        aria-label="Password validation passed"
+                      >
+                        <title>Password validation passed</title>
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     )}
                   </div>

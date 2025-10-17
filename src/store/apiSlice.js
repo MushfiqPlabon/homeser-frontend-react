@@ -4,13 +4,23 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 
+// Helper function to get cookie by name
+const getCookie = (name) => {
+  const cookies = document.cookie.split(";").reduce((cookies, cookie) => {
+    const [cookieName, cookieValue] = cookie.trim().split("=");
+    cookies[cookieName] = cookieValue;
+    return cookies;
+  }, {});
+  return cookies[name] || null;
+};
+
 // Create baseQuery with token refresh handling
 const baseQueryWithReauth = async (args, api, extraOptions) => {
   const baseQuery = fetchBaseQuery({
     baseUrl: API_BASE_URL,
     prepareHeaders: (headers) => {
-      // Get token from localStorage (matching existing auth pattern)
-      const token = localStorage.getItem("access_token");
+      // Get token from cookies for better security
+      const token = getCookie("access_token");
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
       }
@@ -24,7 +34,7 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
   if (result.error && result.error.status === 401) {
     // Try to refresh the token
     try {
-      const refreshToken = localStorage.getItem("refresh_token");
+      const refreshToken = getCookie("refresh_token");
       if (refreshToken) {
         const refreshResult = await baseQuery(
           {
@@ -37,18 +47,14 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
         );
 
         if (refreshResult.data?.access) {
-          // Store new access token
-          localStorage.setItem("access_token", refreshResult.data.access);
-
           // Retry the original request with new token
           result = await baseQuery(args, api, extraOptions);
         }
       }
     } catch (_refreshError) {
-      // If refresh fails, clear tokens and redirect to login
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
-      // We could redirect to login here if needed
+      // If refresh fails, we don't need to manually clear cookies
+      // as the backend should handle this
+      console.warn("Token refresh failed, user will be logged out");
     }
   }
 

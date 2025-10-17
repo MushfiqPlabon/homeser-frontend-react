@@ -10,21 +10,28 @@ import {
   StarIcon as StarIconSolid,
 } from "@heroicons/react/24/outline";
 import { StarIcon } from "@heroicons/react/24/solid";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { OrderSkeleton } from "../components";
 import { useAuth } from "../context/AuthContext";
+import { useWebSocket } from "../context/WebSocketContext";
 import {
   useCreateReview,
   useUpdateReview,
   useUserOrders,
 } from "../hooks/useApi";
+import { formatDate } from "../utils/uiUtils.jsx";
 
 const OrderDetailPage = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { isConnected, subscribeToOrder } = useWebSocket();
 
   const reviewTextId = useId();
+
+  const [_realTimeOrder, _setRealTimeOrder] = useState(null);
+  const [orderUpdates, setOrderUpdates] = useState(new Map());
 
   const [reviewForm, setReviewForm] = useState({
     rating: 5,
@@ -38,21 +45,73 @@ const OrderDetailPage = () => {
   const [_updateReview] = useUpdateReview();
   const [createReview] = useCreateReview();
 
-  // Check authentication
-  if (!isAuthenticated) {
-    navigate("/login", {
-      state: { from: { pathname: `/dashboard/orders/${orderId}` } },
-    });
-    return null;
-  }
-
   // Find the specific order
-  const order = orders?.find((o) => o.id === parseInt(orderId, 10));
+  const baseOrder = orders?.find((o) => o.id === parseInt(orderId, 10));
+
+  // Combine base order with real-time updates
+  const [realTimeOrder, setRealTimeOrder] = useState(baseOrder);
+
+  useEffect(() => {
+    if (baseOrder) {
+      const update = orderUpdates.get(parseInt(orderId, 10));
+      if (update) {
+        setRealTimeOrder({ ...baseOrder, ...update });
+      } else {
+        setRealTimeOrder(baseOrder);
+      }
+    }
+  }, [baseOrder, orderId, orderUpdates]);
+
+  // Check authentication and redirect if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/login", {
+        state: { from: { pathname: `/dashboard/orders/${orderId}` } },
+      });
+    }
+  }, [isAuthenticated, navigate, orderId]);
+
+  // Subscribe to WebSocket events for order updates
+  useEffect(() => {
+    if (!isConnected || !baseOrder) return;
+
+    // Subscribe to this specific order
+    subscribeToOrder(parseInt(orderId, 10));
+    subscribeToOrder(parseInt(orderId, 10));
+
+    // Handle order status updates
+    const handleOrderUpdate = (data) => {
+      if (data.order_id === parseInt(orderId, 10)) {
+        setOrderUpdates((prev) => {
+          const newUpdates = new Map(prev);
+          newUpdates.set(data.order_id, {
+            status: data.status,
+            payment_status: data.payment_status,
+            timestamp: data.timestamp,
+            isUpdated: true,
+          });
+          return newUpdates;
+        });
+      }
+    };
+
+    // Add event listener for WebSocket events
+    window.addEventListener("orderUpdate", (e) => {
+      handleOrderUpdate(e.detail);
+    });
+
+    // Cleanup on unmount
+    return () => {
+      window.removeEventListener("orderUpdate", handleOrderUpdate);
+    };
+  }, [isConnected, baseOrder, orderId, subscribeToOrder]);
+
+  const order = realTimeOrder;
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 backdrop-blur-sm bg-white/30 rounded-full p-2"></div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50 py-8">
+        <OrderSkeleton />
       </div>
     );
   }
@@ -146,19 +205,9 @@ const OrderDetailPage = () => {
     }
   };
 
-  // Format date helper
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
   // Render status badge
   const renderStatusBadge = (status) => {
+    const isUpdated = orderUpdates.get(parseInt(orderId, 10))?.isUpdated;
     const statusStyles = {
       pending: "bg-yellow-100 text-yellow-800",
       confirmed: "bg-blue-100 text-blue-800",
@@ -168,16 +217,24 @@ const OrderDetailPage = () => {
     };
 
     return (
-      <span
-        className={`px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${statusStyles[status] || "bg-gray-100 text-gray-800"}`}
-      >
-        {status.replace("_", " ")}
-      </span>
+      <div className="flex items-center">
+        <span
+          className={`px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${statusStyles[status] || "bg-gray-100 text-gray-800"}`}
+        >
+          {status.replace("_", " ")}
+        </span>
+        {isUpdated && (
+          <span className="ml-2 text-xs text-blue-600 animate-pulse">
+            (Updated just now)
+          </span>
+        )}
+      </div>
     );
   };
 
   // Render payment status badge
   const renderPaymentStatusBadge = (status) => {
+    const isUpdated = orderUpdates.get(parseInt(orderId, 10))?.isUpdated;
     const statusStyles = {
       pending: "bg-yellow-100 text-yellow-800",
       paid: "bg-green-100 text-green-800",
@@ -187,11 +244,18 @@ const OrderDetailPage = () => {
     };
 
     return (
-      <span
-        className={`px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${statusStyles[status] || "bg-gray-100 text-gray-800"}`}
-      >
-        {status}
-      </span>
+      <div className="flex items-center">
+        <span
+          className={`px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${statusStyles[status] || "bg-gray-100 text-gray-800"}`}
+        >
+          {status}
+        </span>
+        {isUpdated && (
+          <span className="ml-2 text-xs text-blue-600 animate-pulse">
+            (Updated just now)
+          </span>
+        )}
+      </div>
     );
   };
 

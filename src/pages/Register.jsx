@@ -55,7 +55,7 @@ const Register = () => {
         return { values: {}, errors: fieldErrors };
       }
     },
-    mode: "onChange",  // Enable real-time validation
+    mode: "onChange", // Enable real-time validation
     defaultValues: {
       first_name: "",
       last_name: "",
@@ -162,10 +162,10 @@ const Register = () => {
                     type="text"
                     autoComplete="given-name"
                     className={`input-field ${
-                      errors.first_name 
-                        ? "border-red-500" 
-                        : watch("first_name") && !errors.first_name 
-                          ? "border-green-500" 
+                      errors.first_name
+                        ? "border-red-500"
+                        : watch("first_name") && !errors.first_name
+                          ? "border-green-500"
                           : "border-gray-300"
                     }`}
                     placeholder="First name"
@@ -174,12 +174,34 @@ const Register = () => {
                   {watch("first_name") && (
                     <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                       {errors.first_name ? (
-                        <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        <svg
+                          className="h-5 w-5 text-red-500"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                          role="img"
+                          aria-label="First name field has an error"
+                        >
+                          <title>First name field has an error</title>
+                          <path
+                            fillRule="evenodd"
+                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                       ) : (
-                        <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        <svg
+                          className="h-5 w-5 text-green-500"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                          role="img"
+                          aria-label="First name validation passed"
+                        >
+                          <title>First name validation passed</title>
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                       )}
                     </div>
@@ -205,10 +227,10 @@ const Register = () => {
                     type="text"
                     autoComplete="family-name"
                     className={`input-field ${
-                      errors.last_name 
-                        ? "border-red-500" 
-                        : watch("last_name") && !errors.last_name 
-                          ? "border-green-500" 
+                      errors.last_name
+                        ? "border-red-500"
+                        : watch("last_name") && !errors.last_name
+                          ? "border-green-500"
                           : "border-gray-300"
                     }`}
                     placeholder="Last name"
@@ -217,12 +239,34 @@ const Register = () => {
                   {watch("last_name") && (
                     <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                       {errors.last_name ? (
-                        <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        <svg
+                          className="h-5 w-5 text-red-500"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                          role="img"
+                          aria-label="Last name field has an error"
+                        >
+                          <title>Last name field has an error</title>
+                          <path
+                            fillRule="evenodd"
+                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                       ) : (
-                        <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        <svg
+                          className="h-5 w-5 text-green-500"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                          role="img"
+                          aria-label="Last name validation passed"
+                        >
+                          <title>Last name validation passed</title>
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                       )}
                     </div>
@@ -249,10 +293,10 @@ const Register = () => {
                   type="text"
                   autoComplete="username"
                   className={`input-field ${
-                    errors.username 
-                      ? "border-red-500" 
-                      : watch("username") && !errors.username 
-                        ? "border-green-500" 
+                    errors.username
+                      ? "border-red-500"
+                      : watch("username") && !errors.username
+                        ? "border-green-500"
                         : "border-gray-300"
                   }`}
                   placeholder="Choose a username"
@@ -261,12 +305,34 @@ const Register = () => {
                 {watch("username") && (
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                     {errors.username ? (
-                      <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      <svg
+                        className="h-5 w-5 text-red-500"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                        role="img"
+                        aria-label="Username field has an error"
+                      >
+                        <title>Username field has an error</title>
+                        <path
+                          fillRule="evenodd"
+                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     ) : (
-                      <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      <svg
+                        className="h-5 w-5 text-green-500"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                        role="img"
+                        aria-label="Username validation passed"
+                      >
+                        <title>Username validation passed</title>
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     )}
                   </div>
@@ -292,10 +358,10 @@ const Register = () => {
                   type="email"
                   autoComplete="email"
                   className={`input-field ${
-                    errors.email 
-                      ? "border-red-500" 
-                      : watch("email") && !errors.email 
-                        ? "border-green-500" 
+                    errors.email
+                      ? "border-red-500"
+                      : watch("email") && !errors.email
+                        ? "border-green-500"
                         : "border-gray-300"
                   }`}
                   placeholder="your.email@example.com"
@@ -304,12 +370,34 @@ const Register = () => {
                 {watch("email") && (
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                     {errors.email ? (
-                      <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      <svg
+                        className="h-5 w-5 text-red-500"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                        role="img"
+                        aria-label="Email field has an error"
+                      >
+                        <title>Email field has an error</title>
+                        <path
+                          fillRule="evenodd"
+                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     ) : (
-                      <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      <svg
+                        className="h-5 w-5 text-green-500"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                        role="img"
+                        aria-label="Email validation passed"
+                      >
+                        <title>Email validation passed</title>
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     )}
                   </div>
@@ -335,10 +423,10 @@ const Register = () => {
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
                   className={`input-field pr-10 ${
-                    errors.password 
-                      ? "border-red-500" 
-                      : watch("password") && !errors.password 
-                        ? "border-green-500" 
+                    errors.password
+                      ? "border-red-500"
+                      : watch("password") && !errors.password
+                        ? "border-green-500"
                         : "border-gray-300"
                   }`}
                   placeholder="Create a strong password"
@@ -347,12 +435,34 @@ const Register = () => {
                 {watch("password") && (
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                     {errors.password ? (
-                      <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      <svg
+                        className="h-5 w-5 text-red-500"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                        role="img"
+                        aria-label="Password field has an error"
+                      >
+                        <title>Password field has an error</title>
+                        <path
+                          fillRule="evenodd"
+                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     ) : (
-                      <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      <svg
+                        className="h-5 w-5 text-green-500"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                        role="img"
+                        aria-label="Password validation passed"
+                      >
+                        <title>Password validation passed</title>
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     )}
                   </div>
@@ -389,10 +499,10 @@ const Register = () => {
                   type={showConfirmPassword ? "text" : "password"}
                   autoComplete="new-password"
                   className={`input-field pr-10 ${
-                    errors.password_confirm 
-                      ? "border-red-500" 
-                      : watch("password_confirm") && !errors.password_confirm 
-                        ? "border-green-500" 
+                    errors.password_confirm
+                      ? "border-red-500"
+                      : watch("password_confirm") && !errors.password_confirm
+                        ? "border-green-500"
                         : "border-gray-300"
                   }`}
                   placeholder="Confirm your password"
@@ -401,12 +511,34 @@ const Register = () => {
                 {watch("password_confirm") && (
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                     {errors.password_confirm ? (
-                      <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      <svg
+                        className="h-5 w-5 text-red-500"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                        role="img"
+                        aria-label="Confirm password field has an error"
+                      >
+                        <title>Confirm password field has an error</title>
+                        <path
+                          fillRule="evenodd"
+                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     ) : (
-                      <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      <svg
+                        className="h-5 w-5 text-green-500"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                        role="img"
+                        aria-label="Confirm password validation passed"
+                      >
+                        <title>Confirm password validation passed</title>
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     )}
                   </div>

@@ -1,13 +1,13 @@
 // EditServicePage.jsx
 // This page component allows service providers to edit their existing services
 
-import { useEffect, useState, useId } from "react";
+import { useEffect, useId, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import LoadingSpinner from "../components/LoadingSpinner";
 import {
   useGetServiceProviderServiceQuery,
   useUpdateServiceProviderServiceMutation,
 } from "../store/extendedApiSlice";
-import LoadingSpinner from "../components/LoadingSpinner";
 
 const EditServicePage = () => {
   const { id } = useParams();
