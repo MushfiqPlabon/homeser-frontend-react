@@ -1,14 +1,26 @@
 import axios from "axios";
 import { handleApiError } from "./errorHandler";
 
-// Determine the base URL for API requests.
-// It first tries to use the VITE_API_BASE_URL environment variable (e.g., for production builds),
-// and falls back to a local development URL if the environment variable is not set.
+// Determine the base URL for API requests
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 
+// Token storage key (must match AuthContext)
+const TOKEN_STORAGE_KEY = "homeser_auth_tokens";
+
 // Variable to store the promise for ongoing token refresh
 let refreshingTokenPromise = null;
+
+// Utility to get tokens from localStorage
+const getStoredTokens = () => {
+  try {
+    const stored = localStorage.getItem(TOKEN_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : { access: null, refresh: null };
+  } catch (error) {
+    console.warn("Failed to parse stored tokens:", error);
+    return { access: null, refresh: null };
+  }
+};
 
 // Create axios instance
 const api = axios.create({
@@ -18,9 +30,7 @@ const api = axios.create({
   },
 });
 
-// Request interceptor: This function runs before each outgoing HTTP request.
-// Its purpose is to automatically attach the JWT access token from cookies
-// to the 'Authorization' header for protected endpoints only.
+// Request interceptor: Attach JWT access token from localStorage
 api.interceptors.request.use(
   (config) => {
     // List of public endpoints that should NOT have authentication headers
@@ -29,6 +39,9 @@ api.interceptors.request.use(
       "/categories/",
       "/services",
       "/categories",
+      "/auth/login/",
+      "/auth/register/",
+      "/auth/token/refresh/",
     ];
 
     // Check if this is a public endpoint
@@ -38,16 +51,9 @@ api.interceptors.request.use(
 
     // Only add auth header if it's not a public endpoint
     if (!isPublicEndpoint) {
-      // Get token from cookies (document.cookie) if available
-      const cookies = document.cookie.split(";").reduce((cookies, cookie) => {
-        const [name, value] = cookie.trim().split("=");
-        cookies[name] = value;
-        return cookies;
-      }, {});
-
-      const token = cookies.access_token;
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+      const tokens = getStoredTokens();
+      if (tokens.access) {
+        config.headers.Authorization = `Bearer ${tokens.access}`;
       }
     }
 
@@ -58,7 +64,7 @@ api.interceptors.request.use(
   },
 );
 
-// Function to refresh the token (to be implemented in AuthContext)
+// Function to refresh the token (to be set by AuthContext)
 let refreshToken = () =>
   Promise.reject(new Error("Token refresh function not set"));
 
@@ -67,10 +73,7 @@ export const setTokenRefreshFunction = (refreshFn) => {
   refreshToken = refreshFn;
 };
 
-// Response interceptor: This function runs after each incoming HTTP response.
-// Its primary purpose is to handle 401 (Unauthorized) errors, which typically
-// occur when the access token has expired. It attempts to refresh the token
-// using the refresh token, and then retries the original failed request.
+// Response interceptor: Handle 401 errors with token refresh
 api.interceptors.response.use(
   (response) => {
     return response;
@@ -78,204 +81,79 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Check if the error is a 401 Unauthorized response and it hasn't been retried yet.
+    // Check if the error is a 401 Unauthorized response and it hasn't been retried yet
     if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true; // Mark the request as retried to prevent infinite loops.
+      originalRequest._retry = true;
 
       // If we're already refreshing the token, wait for it to complete
       if (refreshingTokenPromise) {
         try {
           const newToken = await refreshingTokenPromise;
-          // Update the authorization header with the new token
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
-          // Retry the original request with the new token
           return api(originalRequest);
         } catch (refreshError) {
-          // If token refresh fails, propagate the error
           return Promise.reject(refreshError);
         }
       }
 
       // Set the refreshing token promise and trigger token refresh
-      refreshingTokenPromise = refreshToken();
-      try {
-        const newToken = await refreshingTokenPromise;
-        // Update the authorization header with the new token
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
-        // Retry the original request with the new token
-        return api(originalRequest);
-      } catch (refreshError) {
-        // If token refresh fails, propagate the error
-        return Promise.reject(refreshError);
-      } finally {
-        // Reset the refreshing token promise
-        refreshingTokenPromise = null;
-      }
+      refreshingTokenPromise = refreshToken()
+        .then((newToken) => {
+          // Update the authorization header with the new token
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          // Retry the original request with the new token
+          return api(originalRequest);
+        })
+        .catch((refreshError) => {
+          // If token refresh fails, propagate the error
+          return Promise.reject(refreshError);
+        })
+        .finally(() => {
+          // Clear the refreshing promise
+          refreshingTokenPromise = null;
+        });
+
+      return refreshingTokenPromise;
     }
 
-    // Handle other errors with our centralized error handler
-    const handledError = handleApiError(error);
-    return Promise.reject(handledError); // For any other errors, or if refresh fails, propagate the error.
+    // For all other errors, use the error handler
+    return handleApiError(error);
   },
 );
 
-// Auth API
+// Auth API endpoints
 export const authAPI = {
-  register: (userData) => api.post("/auth/register/", userData),
   login: (credentials) => api.post("/auth/login/", credentials),
+  register: (userData) => api.post("/auth/register/", userData),
+  logout: () => api.post("/auth/logout/"),
   getProfile: () => api.get("/profile/"),
-  updateProfile: (profileData) => api.patch("/profile/", profileData),
-  passwordReset: (email) => api.post("/auth/password-reset/", { email }),
-  confirmPasswordReset: (data) =>
-    api.post("/auth/password-reset/confirm/", data),
-  validateResetToken: (uidb64, token) =>
-    api.post("/auth/password-reset/validate/", { uidb64, token }),
-};
-
-// Services API
-export const servicesAPI = {
-  getServices: (params = {}, config = {}) =>
-    api.get("/services/", { params, ...config }),
-  getService: (id) => api.get(`/services/${id}/`),
-  getServiceReviews: (serviceId) => api.get(`/services/${serviceId}/reviews/`),
-  createReview: (serviceId, reviewData) =>
-    api.post(`/services/${serviceId}/reviews/`, reviewData),
-};
-
-// Extended Services API
-export const extendedServicesAPI = {
-  getExtendedServices: (params = {}, config = {}) =>
-    api.get("/ext/services/", { params, ...config }),
-  getExtendedService: (id) => api.get(`/ext/services/${id}/`),
-  createExtendedService: (serviceData) =>
-    api.post("/ext/services/", serviceData),
-  updateExtendedService: (id, serviceData) =>
-    api.put(`/ext/services/${id}/`, serviceData),
-  partialUpdateExtendedService: (id, serviceData) =>
-    api.patch(`/ext/services/${id}/`, serviceData),
-  deleteExtendedService: (id) => api.delete(`/ext/services/${id}/`),
-};
-
-// Service Provider API
-export const serviceProviderAPI = {
-  getServiceProviderServices: (params = {}, config = {}) =>
-    api.get("/provider/services/", { params, ...config }),
-  getServiceProviderService: (id) => api.get(`/provider/services/${id}/`),
-  createServiceProviderService: (serviceData) =>
-    api.post("/provider/services/", serviceData),
-  updateServiceProviderService: (id, serviceData) =>
-    api.put(`/provider/services/${id}/`, serviceData),
-  partialUpdateServiceProviderService: (id, serviceData) =>
-    api.patch(`/provider/services/${id}/`, serviceData),
-  deleteServiceProviderService: (id) => api.delete(`/provider/services/${id}/`),
-};
-
-// Extended Categories API
-export const extendedCategoriesAPI = {
-  getExtendedCategories: () => api.get("/ext/categories/"),
-  getExtendedCategory: (id) => api.get(`/ext/categories/${id}/`),
-  createExtendedCategory: (categoryData) =>
-    api.post("/ext/categories/", categoryData),
-  updateExtendedCategory: (id, categoryData) =>
-    api.put(`/ext/categories/${id}/`, categoryData),
-  partialUpdateExtendedCategory: (id, categoryData) =>
-    api.patch(`/ext/categories/${id}/`, categoryData),
-  deleteExtendedCategory: (id) => api.delete(`/ext/categories/${id}/`),
-};
-
-// Categories API
-export const categoriesAPI = {
-  getCategories: () => api.get("/categories/"),
-};
-
-// Users API
-export const usersAPI = {
-  getUsers: () => api.get("/admin/users/"),
-};
-
-// Reviews API
-export const reviewsAPI = {
-  getReviews: () => api.get("/admin/reviews/"),
-  deleteReview: (reviewId) => api.delete(`/reviews/${reviewId}/`),
-  updateReview: (reviewId, reviewData) =>
-    api.patch(`/reviews/${reviewId}/`, reviewData),
-  getUserReviews: () => api.get("/reviews/user/"),
-  // Review detail endpoint
-  getReview: (reviewId) => api.get(`/reviews/${reviewId}/`),
-  createReview: (serviceId, reviewData) =>
-    api.post(`/services/${serviceId}/reviews/`, reviewData),
-  // Admin review endpoints
-  adminUpdateReview: (reviewId, reviewData) =>
-    api.put(`/reviews/${reviewId}/`, reviewData),
-  adminPartialUpdateReview: (reviewId, reviewData) =>
-    api.patch(`/reviews/${reviewId}/`, reviewData),
-  adminDeleteReview: (reviewId) => api.delete(`/reviews/${reviewId}/`),
+  refreshToken: (refreshToken) =>
+    api.post("/auth/token/refresh/", { refresh: refreshToken }),
 };
 
 // Orders API
 export const ordersAPI = {
-  checkout: (orderData) => api.post("/checkout/", orderData),
-  getOrders: () => api.get("/admin/orders/"),
   getUserOrders: () => api.get("/user/orders/"),
-  updateOrderStatus: (orderId, statusData) =>
-    api.post(`/admin/orders/${orderId}/status/`, statusData),
+  getOrder: (orderId) => api.get(`/user/orders/${orderId}/`),
+  createOrder: (orderData) => api.post("/user/orders/", orderData),
+};
+
+// Services API
+export const servicesAPI = {
+  getServices: (params) => api.get("/services/", { params }),
+  getService: (serviceId) => api.get(`/services/${serviceId}/`),
+  createService: (serviceData) => api.post("/services/", serviceData),
+  updateService: (serviceId, serviceData) =>
+    api.put(`/services/${serviceId}/`, serviceData),
+  deleteService: (serviceId) => api.delete(`/services/${serviceId}/`),
 };
 
 // Cart API
 export const cartAPI = {
   getCart: () => api.get("/cart/"),
-  addToCart: (serviceId, quantity) =>
-    api.post("/cart/add/", { service_id: serviceId, qty: quantity }),
-  removeFromCart: (serviceId) =>
-    api.post("/cart/remove/", { service_id: serviceId }),
-  updateCartItemQuantity: (serviceId, quantity) =>
-    api.post("/cart/update-quantity/", {
-      service_id: serviceId,
-      qty: quantity,
-    }),
-};
-// Admin API
-export const adminAPI = {
-  promoteUser: (userId) => api.post("/admin/promote/", { user_id: userId }),
-  // Services CRUD
-  createService: (serviceData) => api.post("/admin/services/", serviceData),
-  getService: (serviceId) => api.get(`/admin/services/${serviceId}/`),
-  updateService: (serviceId, serviceData) =>
-    api.put(`/admin/services/${serviceId}/`, serviceData),
-  deleteService: (serviceId) => api.delete(`/admin/services/${serviceId}/`),
-  getServices: () => api.get("/services/"),
-  // Categories CRUD
-  createCategory: (categoryData) =>
-    api.post("/admin/categories/create/", categoryData),
-  getCategory: (categoryId) => api.get(`/admin/categories/${categoryId}/`),
-  updateCategory: (categoryId, categoryData) =>
-    api.put(`/admin/categories/${categoryId}/`, categoryData),
-  deleteCategory: (categoryId) =>
-    api.delete(`/admin/categories/${categoryId}/`),
-  // Users CRUD
-  getUser: (userId) => api.get(`/admin/users/${userId}/`),
-  updateUser: (userId, userData) =>
-    api.put(`/admin/users/${userId}/`, userData),
-  deleteUser: (userId) => api.delete(`/admin/users/${userId}/`),
-  // Orders CRUD
-  updateOrderStatus: (orderId, statusData) =>
-    api.post(`/admin/orders/${orderId}/status/`, statusData),
-  getOrders: () => api.get("/admin/orders/"),
-  adminUpdateOrderStatus: (orderId, statusData) =>
-    api.post(`/admin/orders/${orderId}/status/`, statusData),
-};
-
-// Payment API
-export const paymentAPI = {
-  handleIPN: (data) => api.post("/payments/ipn/", data),
-  handlePaymentIPN: (data) => api.post("/payments/ipn/", data),
-};
-
-// Search API
-export const searchAPI = {
-  advancedSearch: (params = {}) => api.get("/search/advanced/", { params }),
-  getAnalytics: (params = {}) => api.get("/search/analytics/", { params }),
-  getPopularSearches: (params = {}) => api.get("/search/popular/", { params }),
+  addToCart: (data) => api.post("/cart/add/", data),
+  removeFromCart: (data) => api.post("/cart/remove/", data),
+  updateCartItem: (data) => api.post("/cart/update-quantity/", data),
 };
 
 export default api;

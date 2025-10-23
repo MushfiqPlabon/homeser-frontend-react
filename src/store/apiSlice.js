@@ -4,14 +4,14 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 
-// Helper function to get cookie by name
-const getCookie = (name) => {
-  const cookies = document.cookie.split(";").reduce((cookies, cookie) => {
-    const [cookieName, cookieValue] = cookie.trim().split("=");
-    cookies[cookieName] = cookieValue;
-    return cookies;
-  }, {});
-  return cookies[name] || null;
+// Helper function to get tokens from localStorage
+const getStoredTokens = () => {
+  try {
+    const stored = localStorage.getItem("homeser_auth_tokens");
+    return stored ? JSON.parse(stored) : { access: null, refresh: null };
+  } catch {
+    return { access: null, refresh: null };
+  }
 };
 
 // Create baseQuery with token refresh handling
@@ -19,10 +19,9 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
   const baseQuery = fetchBaseQuery({
     baseUrl: API_BASE_URL,
     prepareHeaders: (headers) => {
-      // Get token from cookies for better security
-      const token = getCookie("access_token");
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
+      const tokens = getStoredTokens();
+      if (tokens.access) {
+        headers.set("Authorization", `Bearer ${tokens.access}`);
       }
       return headers;
     },
@@ -32,29 +31,34 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
 
   // If we get a 401, try to refresh the token
   if (result.error && result.error.status === 401) {
-    // Try to refresh the token
-    try {
-      const refreshToken = getCookie("refresh_token");
-      if (refreshToken) {
+    const tokens = getStoredTokens();
+    if (tokens.refresh) {
+      try {
         const refreshResult = await baseQuery(
           {
             url: "/auth/token/refresh/",
             method: "POST",
-            body: { refresh: refreshToken },
+            body: { refresh: tokens.refresh },
           },
           api,
           extraOptions,
         );
 
         if (refreshResult.data?.access) {
+          // Update localStorage with new token
+          localStorage.setItem(
+            "homeser_auth_tokens",
+            JSON.stringify({
+              access: refreshResult.data.access,
+              refresh: tokens.refresh,
+            }),
+          );
           // Retry the original request with new token
           result = await baseQuery(args, api, extraOptions);
         }
+      } catch (_refreshError) {
+        console.warn("Token refresh failed");
       }
-    } catch (_refreshError) {
-      // If refresh fails, we don't need to manually clear cookies
-      // as the backend should handle this
-      console.warn("Token refresh failed, user will be logged out");
     }
   }
 
