@@ -1,22 +1,22 @@
-// SearchPage.jsx
-// This page component provides advanced search functionality for services
-
+// SearchPage.jsx - Optimized with debounced search
 import {
   ChartBarIcon,
   FireIcon,
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
-import { useCallback, useEffect, useId, useState } from "react";
+import { memo, useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import LazyImage from "../components/LazyImage";
 import { usePopularSearches, useSearchAnalytics } from "../hooks/useApi";
+import useDebounce from "../hooks/useDebounce";
 import { searchAPI } from "../utils/api";
 import { getFallbackImage } from "../utils/imageUtils";
 import { renderStars } from "../utils/uiUtils.jsx";
 
-const SearchPage = () => {
+const SearchPage = memo(() => {
   const navigate = useNavigate();
 
+  // Generate stable IDs for form elements
   const searchQueryId = useId();
   const searchLimitId = useId();
   const searchLanguageId = useId();
@@ -24,6 +24,28 @@ const SearchPage = () => {
   const minPriceId = useId();
   const maxPriceId = useId();
   const ratingFilterId = useId();
+
+  // Memoized form IDs
+  const _formIds = useMemo(
+    () => ({
+      searchQuery: searchQueryId,
+      searchLimit: searchLimitId,
+      searchLanguage: searchLanguageId,
+      categoryFilter: categoryFilterId,
+      minPrice: minPriceId,
+      maxPrice: maxPriceId,
+      ratingFilter: ratingFilterId,
+    }),
+    [
+      searchQueryId,
+      searchLimitId,
+      searchLanguageId,
+      categoryFilterId,
+      minPriceId,
+      maxPriceId,
+      ratingFilterId,
+    ],
+  );
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -33,35 +55,41 @@ const SearchPage = () => {
   const [error, setError] = useState("");
   const [showFilters, setShowFilters] = useState(false);
 
-  // Search analytics data
+  // Debounced search query - prevents excessive API calls
+  const _debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+  // Search analytics data with caching
   const { data: searchAnalytics } = useSearchAnalytics();
   const { data: popularSearches } = usePopularSearches({ limit: 10 });
 
-  // Search function
-  const performSearch = useCallback(async () => {
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      return;
-    }
+  // Memoized search function
+  const performSearch = useCallback(
+    async (query) => {
+      if (!query?.trim()) {
+        setSearchResults([]);
+        return;
+      }
 
-    setIsLoading(true);
-    setError("");
+      setIsLoading(true);
+      setError("");
 
-    try {
-      const response = await searchAPI.advancedSearch({
-        q: searchQuery,
-        limit: searchLimit,
-        language: searchLanguage,
-      });
+      try {
+        const response = await searchAPI.advancedSearch({
+          q: searchQuery,
+          limit: searchLimit,
+          language: searchLanguage,
+        });
 
-      setSearchResults(response.data?.results || []);
-    } catch (err) {
-      setError("Failed to perform search. Please try again.");
-      console.error("Search error:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [searchQuery, searchLimit, searchLanguage]);
+        setSearchResults(response.data?.results || []);
+      } catch (err) {
+        setError("Failed to perform search. Please try again.");
+        console.error("Search error:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [searchQuery, searchLimit, searchLanguage],
+  );
 
   // Handle search on query change with debounce
   useEffect(() => {
@@ -433,6 +461,8 @@ const SearchPage = () => {
       </div>
     </div>
   );
-};
+});
+
+SearchPage.displayName = "SearchPage";
 
 export default SearchPage;

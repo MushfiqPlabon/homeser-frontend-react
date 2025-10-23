@@ -116,9 +116,11 @@ const AnimatedRoutes = () => {
           <Route
             path="/dashboard"
             element={
-              <PageTransition>
-                <Dashboard />
-              </PageTransition>
+              <ProtectedRoute>
+                <PageTransition>
+                  <Dashboard />
+                </PageTransition>
+              </ProtectedRoute>
             }
           />
           <Route

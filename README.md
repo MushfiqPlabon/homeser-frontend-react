@@ -4,7 +4,7 @@
 
 HomeSer is a modern frontend application for the household service platform, designed to provide exceptional user experience while driving customer acquisition and retention. Built with React and modern web technologies, this interface serves as the customer-facing layer that converts marketing efforts into actual bookings and revenue.
 
-This project demonstrates my ability to create user-centric interfaces that align with business objectives, enhancing customer experience while supporting marketing goals. As a BBA Marketing graduate, I've integrated user psychology, conversion optimization, and customer journey principles into the frontend design.
+This project demonstrates my ability to create user-centric interfaces that align with business objectives, enhancing customer experience while supporting marketing goals. As a BBA Marketing graduate, I've integrated user psychology, conversion optimization, and customer journey principles into the frontend design planning, this project is still under development.
 
 ## Key Business Features
 
@@ -24,7 +24,7 @@ For technical recruiters: This frontend implements modern web development practi
 - **State Management**: Redux Toolkit and RTK Query (Redux Toolkit Query) for efficient client and server state management
 - **Security**: JWT token handling and secure API communication
 - **Role Management**: Implementation of role-based access control for customers, service providers, and admins
-- **Real-time Features**: WebSocket integration for live order updates, payment status, and notifications
+- **Real-time Features**: Pusher integration for live order updates, payment status, and notifications
 - **Analytics Integration**: Real-time dashboards for email and sentiment analytics
 - **Development Tools**: Vite for fast builds, TypeScript for type safety, and automated testing
 
@@ -97,12 +97,19 @@ The frontend is configured for easy deployment on Vercel with:
 
 ## Real-time Features
 
-- **WebSocket Integration**: Full-featured WebSocket implementation with automatic reconnection
-- **Live Order Tracking**: Real-time order status updates with visual indicators
-- **Payment Notifications**: Live payment status updates during checkout process
-- **Live Notifications**: Real-time notifications with connection status indicators
+- **Pusher Integration**: Full-featured real-time communication implementation using Pusher with automatic reconnection
+- **Live Order Tracking**: Real-time order status updates with visual indicators through Pusher channels
+- **Payment Notifications**: Live payment status updates during checkout process through Pusher events
+- **Live Notifications**: Real-time notifications with connection status indicators through Pusher channels
 - **Optimistic Updates**: API operations with immediate UI feedback and rollback on failure
 - **Offline Queue**: Actions queued when offline and processed when connection is restored
+
+### Pusher Configuration
+
+The frontend connects to Pusher for real-time communication:
+- Pusher credentials are configured through environment variables (`VITE_PUSHER_KEY`, `VITE_PUSHER_CLUSTER`)
+- Real-time events are subscribed to through Pusher channels in the `WebSocketContext`
+- Events include `order_update`, `payment_update`, and `notification` for different types of real-time communications
 
 ## Performance Optimizations
 

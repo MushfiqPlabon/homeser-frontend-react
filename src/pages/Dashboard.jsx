@@ -20,7 +20,7 @@ import {
 import { ordersAPI } from "../utils/api";
 
 const Dashboard = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, hasRole, isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState("orders");
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -46,7 +46,10 @@ const Dashboard = () => {
     error: serviceProviderServicesError,
     refetch: refetchServiceProviderServices,
   } = useGetServiceProviderServicesQuery(undefined, {
-    skip: activeTab !== "services" || !isAuthenticated,
+    skip:
+      activeTab !== "services" ||
+      !isAuthenticated ||
+      (!hasRole("service_provider") && !isAdmin),
   });
 
   const [deleteServiceProviderService] =
@@ -81,29 +84,6 @@ const Dashboard = () => {
     }
   }, [isAuthenticated, activeTab]);
 
-  // Fetch user's orders when the component mounts or when the orders tab is selected
-  useEffect(() => {
-    if (isAuthenticated && activeTab === "orders") {
-      const fetchOrders = async () => {
-        try {
-          setLoading(true);
-          setError("");
-          const response = await ordersAPI.getUserOrders();
-          // Ensure orders is always an array
-          const ordersData = response.data?.data || response.data || [];
-          setOrders(Array.isArray(ordersData) ? ordersData : []);
-        } catch (err) {
-          setError("Failed to load orders");
-          console.error("Error fetching orders:", err);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      fetchOrders();
-    }
-  }, [isAuthenticated, activeTab]);
-
   if (!isAuthenticated) {
     return null;
   }
@@ -113,8 +93,15 @@ const Dashboard = () => {
     { id: "reviews", name: "My Reviews", icon: StarIcon },
     { id: "profile", name: "Profile", icon: UserIcon },
     { id: "settings", name: "Settings", icon: CogIcon },
-    { id: "services", name: "My Services", icon: WrenchScrewdriverIcon },
   ];
+
+  if (hasRole("service_provider") || isAdmin) {
+    tabs.push({
+      id: "services",
+      name: "My Services",
+      icon: WrenchScrewdriverIcon,
+    });
+  }
 
   const renderOrders = () => {
     if (loading) {
@@ -412,6 +399,7 @@ const Dashboard = () => {
       case "services":
         return (
           <PermissionGuard
+            role={["service_provider", "admin"]}
             fallback={
               <div className="text-center py-8">
                 <WrenchScrewdriverIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />

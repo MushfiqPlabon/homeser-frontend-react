@@ -235,7 +235,7 @@ const ServiceDetail = () => {
     }
 
     try {
-      await addToCart({ serviceId: service.id, quantity });
+      await addToCart({ serviceId: service.id, quantity, service });
       setSuccessMessage("Service added to cart successfully!");
     } catch (_error) {
       setError("Failed to add service to cart");

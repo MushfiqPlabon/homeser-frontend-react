@@ -52,7 +52,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const { login } = useAuth();
+  const { login, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   const onSubmit = async (data) => {
@@ -65,9 +65,13 @@ const Login = () => {
     });
 
     if (result.success) {
-      // Redirect to the original location or default to home
-      const from = location.state?.from?.pathname || "/";
-      navigate(from, { replace: true });
+      if (isAdmin) {
+        navigate("/admin-dashboard", { replace: true });
+      } else {
+        // Redirect to the original location or default to home
+        const from = location.state?.from?.pathname || "/";
+        navigate(from, { replace: true });
+      }
     } else {
       // Handle server-side errors
       console.error("Login failed:", result.error);

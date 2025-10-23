@@ -18,7 +18,8 @@ const PermissionGuard = ({ permission, role, children, fallback = null }) => {
 
   // Check role if provided
   if (role) {
-    if (hasRole?.(role)) {
+    const roles = Array.isArray(role) ? role : [role];
+    if (roles.some((r) => hasRole?.(r))) {
       return children;
     }
     return fallback;

@@ -1,11 +1,7 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithToastsAndNotifications } from "./baseQueryWithToasts";
 
-// Determine the base URL for API requests
-const _API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
-
-// Create API slice for extended functionality
+// Create API slice with optimized caching
 export const extendedApiSlice = createApi({
   reducerPath: "extendedApi",
   baseQuery: baseQueryWithToastsAndNotifications,
@@ -21,19 +17,23 @@ export const extendedApiSlice = createApi({
     "Search",
     "Settings",
   ],
+  // Global cache configuration
+  keepUnusedDataFor: 60, // 1 minute default
   endpoints: (builder) => ({
-    // Extended Services Endpoints
+    // Static data - long cache
     getExtendedServices: builder.query({
       query: (params) => ({
         url: "/ext/services/",
         params,
       }),
       providesTags: ["ExtendedService"],
+      keepUnusedDataFor: 300, // 5 minutes for services list
     }),
 
     getExtendedService: builder.query({
       query: (id) => `/ext/services/${id}/`,
       providesTags: (_result, _error, id) => [{ type: "ExtendedService", id }],
+      keepUnusedDataFor: 300, // 5 minutes for individual service
     }),
 
     createExtendedService: builder.mutation({
