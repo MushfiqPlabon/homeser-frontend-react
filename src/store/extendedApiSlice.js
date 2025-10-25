@@ -263,7 +263,7 @@ export const extendedApiSlice = createApi({
     }),
 
     updateServiceReview: builder.mutation({
-      query: ({ reviewId, /* serviceId, */ reviewData }) => ({
+      query: ({ reviewId, reviewData }) => ({
         url: `/reviews/${reviewId}/`,
         method: "PUT",
         body: reviewData,
@@ -306,7 +306,7 @@ export const extendedApiSlice = createApi({
     }),
 
     partialUpdateServiceReview: builder.mutation({
-      query: ({ reviewId, /* serviceId, */ reviewData }) => ({
+      query: ({ reviewId, reviewData }) => ({
         url: `/reviews/${reviewId}/`,
         method: "PATCH",
         body: reviewData,
@@ -318,7 +318,7 @@ export const extendedApiSlice = createApi({
     }),
 
     deleteServiceReview: builder.mutation({
-      query: ({ reviewId /* serviceId */ }) => ({
+      query: ({ reviewId }) => ({
         url: `/reviews/${reviewId}/`,
         method: "DELETE",
       }),

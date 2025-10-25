@@ -130,7 +130,6 @@ const Services = () => {
 
   useEffect(() => {
     // Log the API base URL for debugging purposes
-    // console.log("API Base URL:", import.meta.env.VITE_API_BASE_URL);
   }, []);
 
   // Fetch services when page, sortBy, or searchTerm changes

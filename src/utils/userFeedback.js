@@ -84,21 +84,6 @@ class UserFeedbackCollector {
    */
   async sendFeedbackToBackend(feedback) {
     try {
-      // In a real implementation, you would send this to your backend
-      // For example:
-      // const response = await fetch('/api/feedback/', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-      //   },
-      //   body: JSON.stringify(feedback)
-      // });
-      //
-      // if (!response.ok) {
-      //   throw new Error('Failed to send feedback');
-      // }
-
       // For now, just simulate a successful send
       console.log("Feedback sent to backend:", feedback);
       return { success: true };
