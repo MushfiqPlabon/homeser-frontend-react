@@ -11,6 +11,7 @@ import { useCart } from "../hooks/useCart";
 import { getFallbackImage } from "../utils/imageUtils";
 import { usePerformanceMonitor } from "../utils/performanceMonitoring";
 import { renderStars } from "../utils/uiUtils.jsx";
+import { formatTaxRate } from "../utils/shared/taxUtils";
 
 const Cart = () => {
   const performanceMonitor = usePerformanceMonitor();
@@ -19,16 +20,33 @@ const Cart = () => {
   const { isConnected } = useWebSocket();
 
   const {
-    items,
-    subtotal,
-    tax,
-    total,
+    cart,
     isLoading,
     isError,
     error,
     removeFromCart,
     updateCartItemQuantity,
   } = useCart();
+
+  const items = cart?.items || [];
+  const subtotal =
+    typeof cart?.subtotal === "number"
+      ? cart.subtotal
+      : typeof cart?.subtotal === "string"
+        ? parseFloat(cart.subtotal) || 0
+        : 0;
+  const tax =
+    typeof cart?.tax === "number"
+      ? cart.tax
+      : typeof cart?.tax === "string"
+        ? parseFloat(cart.tax) || 0
+        : 0;
+  const total =
+    typeof cart?.total === "number"
+      ? cart.total
+      : typeof cart?.total === "string"
+        ? parseFloat(cart.total) || 0
+        : 0;
 
   const [updatingQuantities, setUpdatingQuantities] = useState({});
   const [_cartUpdates, _setCartUpdates] = useState(new Map());
@@ -341,7 +359,9 @@ const Cart = () => {
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Tax (5%):</span>
+                    <span className="text-gray-600">
+                      Tax ({formatTaxRate()}):
+                    </span>
                     <span className="font-semibold">৳{tax.toFixed(2)}</span>
                   </div>
                   <div className="border-t border-gray-300/50 pt-2">

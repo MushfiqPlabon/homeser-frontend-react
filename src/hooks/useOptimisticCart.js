@@ -9,288 +9,30 @@ import {
   useUpdateCartItemQuantityMutation,
 } from "../store/apiSlice";
 import { createCartMap } from "../utils/cartUtils";
-import { useLocalStorageCart } from "./useLocalStorageCart";
 
 export const useOptimisticCart = () => {
   const dispatch = useDispatch();
   const { isAuthenticated } = useAuth();
   const { showToast } = useToast();
-  const localStorageCart = useLocalStorageCart();
 
   // Track active operations to prevent race conditions
-  const { activeOperations } = useSelector(
-    (state) => state.cart || { activeOperations: new Set() },
+  // This prevents multiple concurrent operations on the same item
+  const activeOperations = useSelector(
+    (state) => state.cart?.activeOperations || {},
   );
 
+  // Get cart data for authenticated users only
   const {
     data: cart,
     isLoading,
     isError,
     error,
   } = useGetCartQuery(undefined, {
-    skip: !isAuthenticated, // Only fetch cart data for authenticated users
+    skip: !isAuthenticated, // Skip if user is not authenticated
   });
 
-  const [removeFromCartMutation] = useRemoveFromCartMutation();
-  const [updateCartItemQuantityMutation] = useUpdateCartItemQuantityMutation();
-  const [addToCartMutation] = useAddToCartMutation();
-
-  // Helper function to calculate totals consistently with backend
-  const calculateTotals = (items) => {
-    const subtotal = items.reduce(
-      (sum, item) => sum + item.service.price * item.quantity,
-      0,
-    );
-    // Using 15% tax rate to match backend calculation
-    const tax = subtotal * 0.15;
-    const total = subtotal + tax;
-
-    return { subtotal, tax, total };
-  };
-
-  // Optimistic update functions
-  const addToCart = async (args) => {
-    if (isAuthenticated) {
-      const operationKey = `add_${args.service.id}_${Date.now()}`;
-      // Check if operation is already in progress
-      if (activeOperations.has(operationKey)) return;
-
-      // Optimistic update: Add item to cart immediately in the store
-      const newItem = {
-        service: args.service,
-        quantity: args.quantity || 1,
-        total_price: (args.service.price * (args.quantity || 1)).toFixed(2),
-      };
-
-      // Get current cart items and add the new item
-      const currentItems = cart?.items ? [...cart.items] : [];
-      const existingItemIndex = currentItems.findIndex(
-        (item) => item.service.id === args.service.id,
-      );
-
-      if (existingItemIndex !== -1) {
-        // Update quantity if item already exists
-        currentItems[existingItemIndex].quantity += args.quantity || 1;
-        currentItems[existingItemIndex].total_price = (
-          currentItems[existingItemIndex].service.price *
-          currentItems[existingItemIndex].quantity
-        ).toFixed(2);
-      } else {
-        // Add new item
-        currentItems.push(newItem);
-      }
-
-      const { subtotal, tax, total } = calculateTotals(currentItems);
-
-      // Optimistic update to the store
-      dispatch(
-        apiSlice.util.updateQueryData("getCart", undefined, (draft) => {
-          draft.items = currentItems;
-          draft.subtotal = subtotal;
-          draft.tax = tax;
-          draft.total = total;
-        }),
-      );
-
-      try {
-        const result = await addToCartMutation(args).unwrap();
-        showToast("Item added to cart successfully!", "success");
-        return result;
-      } catch (error) {
-        // Revert optimistic update on error
-        const revertedItems = cart?.items ? [...cart.items] : [];
-        const revertedTotals = calculateTotals(revertedItems);
-
-        dispatch(
-          apiSlice.util.updateQueryData("getCart", undefined, (draft) => {
-            draft.items = revertedItems;
-            draft.subtotal = revertedTotals.subtotal;
-            draft.tax = revertedTotals.tax;
-            draft.total = revertedTotals.total;
-          }),
-        );
-        const errorMessage =
-          error?.data?.detail || "Failed to add item to cart";
-        showToast(errorMessage, "error");
-        throw error;
-      }
-    } else {
-      // Use localStorage cart for unauthenticated users
-      const { quantity = 1, service } = args;
-      localStorageCart.addToCart(service, quantity);
-      showToast("Item added to cart successfully!", "success");
-      return Promise.resolve({ success: true });
-    }
-  };
-
-  const removeFromCart = async (args) => {
-    if (isAuthenticated) {
-      const operationKey = `remove_${args.serviceId}_${Date.now()}`;
-      // Check if operation is already in progress
-      if (activeOperations.has(operationKey)) return;
-
-      // Find the item that's being removed for potential revert
-      const itemToRemove = cart?.items?.find(
-        (item) => item.service.id === args.serviceId,
-      );
-      if (!itemToRemove) return;
-
-      // Get current cart items and remove the specified item
-      const currentItems = cart?.items
-        ? cart.items.filter((item) => item.service.id !== args.serviceId)
-        : [];
-      const { subtotal, tax, total } = calculateTotals(currentItems);
-
-      // Optimistic update: Remove item from cart immediately in the store
-      dispatch(
-        apiSlice.util.updateQueryData("getCart", undefined, (draft) => {
-          draft.items = currentItems;
-          draft.subtotal = subtotal;
-          draft.tax = tax;
-          draft.total = total;
-        }),
-      );
-
-      try {
-        const result = await removeFromCartMutation(args).unwrap();
-        showToast("Item removed from cart", "success");
-        return result;
-      } catch (error) {
-        // Revert optimistic update on error
-        const revertedItems = cart?.items ? [...cart.items] : [];
-        const revertedTotals = calculateTotals(revertedItems);
-
-        dispatch(
-          apiSlice.util.updateQueryData("getCart", undefined, (draft) => {
-            draft.items = revertedItems;
-            draft.subtotal = revertedTotals.subtotal;
-            draft.tax = revertedTotals.tax;
-            draft.total = revertedTotals.total;
-          }),
-        );
-        const errorMessage =
-          error?.data?.detail || "Failed to remove item from cart";
-        showToast(errorMessage, "error");
-        throw error;
-      }
-    } else {
-      // Use localStorage cart for unauthenticated users
-      const { serviceId } = args;
-      localStorageCart.removeFromCart(serviceId);
-      showToast("Item removed from cart", "success");
-      return Promise.resolve({ success: true });
-    }
-  };
-
-  const updateCartItemQuantity = async (args) => {
-    if (isAuthenticated) {
-      const operationKey = `update_${args.serviceId}_${Date.now()}`;
-      // Check if operation is already in progress
-      if (activeOperations.has(operationKey)) return;
-
-      // Find the item to update
-      const itemToUpdate = cart?.items?.find(
-        (item) => item.service.id === args.serviceId,
-      );
-      if (!itemToUpdate) return;
-
-      // Get current cart items and update the specified item quantity
-      const currentItems = cart?.items
-        ? cart.items.map((item) => {
-            if (item.service.id === args.serviceId) {
-              return {
-                ...item,
-                quantity: args.quantity,
-                total_price: (item.service.price * args.quantity).toFixed(2),
-              };
-            }
-            return item;
-          })
-        : [];
-
-      const { subtotal, tax, total } = calculateTotals(currentItems);
-
-      // Optimistic update: update quantity immediately in the store
-      dispatch(
-        apiSlice.util.updateQueryData("getCart", undefined, (draft) => {
-          draft.items = currentItems;
-          draft.subtotal = subtotal;
-          draft.tax = tax;
-          draft.total = total;
-        }),
-      );
-
-      try {
-        const result = await updateCartItemQuantityMutation(args).unwrap();
-        showToast("Cart updated successfully!", "success");
-        return result;
-      } catch (error) {
-        // Revert optimistic update on error
-        const revertedItems = cart?.items ? [...cart.items] : [];
-        const revertedTotals = calculateTotals(revertedItems);
-
-        dispatch(
-          apiSlice.util.updateQueryData("getCart", undefined, (draft) => {
-            draft.items = revertedItems;
-            draft.subtotal = revertedTotals.subtotal;
-            draft.tax = revertedTotals.tax;
-            draft.total = revertedTotals.total;
-          }),
-        );
-        const errorMessage = error?.data?.detail || "Failed to update cart";
-        showToast(errorMessage, "error");
-        throw error;
-      }
-    } else {
-      // Use localStorage cart for unauthenticated users
-      const { serviceId, quantity } = args;
-      localStorageCart.updateCartItemQuantity(serviceId, quantity);
-      showToast("Cart updated successfully!", "success");
-      return Promise.resolve({ success: true });
-    }
-  };
-
-  // Function to migrate localStorage cart to authenticated cart when user logs in
-  const migrateGuestCartToAuthenticated = async () => {
-    if (isAuthenticated && localStorageCart.cartItems.length > 0) {
-      // Add all items from localStorage cart to authenticated cart
-      for (const item of localStorageCart.cartItems) {
-        try {
-          await addToCart({
-            service: item.service,
-            quantity: item.quantity,
-          });
-        } catch (error) {
-          console.error(
-            `Failed to migrate cart item: ${item.service.id}`,
-            error,
-          );
-        }
-      }
-      // Clear localStorage cart after migration
-      localStorageCart.clearCart();
-    }
-  };
-
-  // Determine which cart data to use based on authentication status
-  const items = isAuthenticated
-    ? cart?.items || []
-    : localStorageCart.cartItems;
-
-  const cartTotals = isAuthenticated
-    ? {
-        subtotal: cart?.subtotal || 0,
-        tax: cart?.tax || 0,
-        total: cart?.total || 0,
-      }
-    : localStorageCart.calculateTotals();
-
-  const subtotal = cartTotals.subtotal;
-  const tax = cartTotals.tax;
-  const total = cartTotals.total;
-
   // Create O(1) lookup map for cart items
-  const cartItemMap = createCartMap(items);
+  const cartItemMap = createCartMap(cart?.items);
 
   // O(1) lookup function for cart items
   const getCartItem = (serviceId) => {
@@ -302,35 +44,215 @@ export const useOptimisticCart = () => {
     return cartItemMap.has(serviceId);
   };
 
-  // O(1) get item quantity
+  // Get item quantity from cart
   const getItemQuantity = (serviceId) => {
-    const item = cartItemMap.get(serviceId);
+    const item = getCartItem(serviceId);
     return item ? item.quantity : 0;
   };
 
+  // Get total cart items count for authenticated users
+  const getTotalItems = () => {
+    return cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+  };
+
+  // Check if an operation is active for a specific item
+  const isActive = (operationKey) => {
+    return !!activeOperations[operationKey];
+  };
+
+  // Optimistic mutations - only available for authenticated users
+  const [addToCartMutation] = useAddToCartMutation();
+  const [removeFromCartMutation] = useRemoveFromCartMutation();
+  const [updateCartItemQuantityMutation] = useUpdateCartItemQuantityMutation();
+
+  // Add to cart with optimistic updates - only for authenticated users
+  const addToCart = async (args) => {
+    if (!isAuthenticated) {
+      showToast("Please log in to add to cart", "info");
+      return;
+    }
+
+    // Check if operation is already active
+    const operationKey = `add_${args.service_id}_${Date.now()}`;
+    if (isActive(operationKey)) {
+      return; // Prevent duplicate operations
+    }
+
+    // Optimistic update: add item to cart in the UI while request is pending
+    const patchResult = dispatch(
+      apiSlice.util.updateQueryData("getCart", undefined, (draft) => {
+        if (!draft.items) draft.items = [];
+
+        // Find if item already exists in cart
+        const existingItemIndex = draft.items.findIndex(
+          (item) => item.service.id === args.service_id,
+        );
+
+        if (existingItemIndex >= 0) {
+          // If item exists, update quantity
+          draft.items[existingItemIndex].quantity += args.qty || 1;
+        } else {
+          // If item doesn't exist, add it to cart
+          draft.items.push({
+            service: { id: args.service_id },
+            quantity: args.qty || 1,
+            unit_price: args.unit_price || "0.00",
+            total_price: args.total_price || "0.00",
+          });
+        }
+
+        // Update totals
+        draft.total_items = (draft.total_items || 0) + (args.qty || 1);
+      }),
+    );
+
+    try {
+      const result = await addToCartMutation(args).unwrap();
+      showToast("Item added to cart!", "success");
+      return result;
+    } catch (error) {
+      // Rollback optimistic update
+      patchResult.undo();
+      showToast(error?.data?.detail || "Failed to add to cart", "error");
+      throw error;
+    }
+  };
+
+  // Remove from cart with optimistic updates - only for authenticated users
+  const removeFromCart = async (args) => {
+    if (!isAuthenticated) {
+      showToast("Please log in to manage your cart", "info");
+      return;
+    }
+
+    const operationKey = `remove_${args.service_id}_${Date.now()}`;
+    if (isActive(operationKey)) {
+      return;
+    }
+
+    // Optimistic update: remove item from cart in the UI while request is pending
+    const patchResult = dispatch(
+      apiSlice.util.updateQueryData("getCart", undefined, (draft) => {
+        if (!draft.items) return;
+
+        // Find the item's index
+        const itemIndex = draft.items.findIndex(
+          (item) => item.service.id === args.service_id,
+        );
+
+        if (itemIndex >= 0) {
+          const removedItem = draft.items[itemIndex];
+
+          // Remove the item from cart
+          draft.items.splice(itemIndex, 1);
+
+          // Update totals
+          draft.total_items = Math.max(
+            0,
+            (draft.total_items || 0) - removedItem.quantity,
+          );
+        }
+      }),
+    );
+
+    try {
+      const result = await removeFromCartMutation(args).unwrap();
+      showToast("Item removed from cart", "info");
+      return result;
+    } catch (error) {
+      // Rollback optimistic update
+      patchResult.undo();
+      showToast(error?.data?.detail || "Failed to remove from cart", "error");
+      throw error;
+    }
+  };
+
+  // Update item quantity with optimistic updates - only for authenticated users
+  const updateItemQuantity = async (args) => {
+    if (!isAuthenticated) {
+      showToast("Please log in to manage your cart", "info");
+      return;
+    }
+
+    const operationKey = `update_${args.service_id}_${Date.now()}`;
+    if (isActive(operationKey)) {
+      return;
+    }
+
+    // Optimistic update: update item quantity in the UI while request is pending
+    const patchResult = dispatch(
+      apiSlice.util.updateQueryData("getCart", undefined, (draft) => {
+        if (!draft.items) return;
+
+        // Find the item's index
+        const itemIndex = draft.items.findIndex(
+          (item) => item.service.id === args.service_id,
+        );
+
+        if (itemIndex >= 0) {
+          const originalQuantity = draft.items[itemIndex].quantity;
+          const quantityDiff = args.qty - originalQuantity;
+
+          // Update the item's quantity
+          draft.items[itemIndex].quantity = args.qty;
+
+          // Update totals
+          draft.total_items = Math.max(
+            0,
+            (draft.total_items || 0) + quantityDiff,
+          );
+        }
+      }),
+    );
+
+    try {
+      const result = await updateCartItemQuantityMutation(args).unwrap();
+      showToast("Cart updated!", "success");
+      return result;
+    } catch (error) {
+      // Rollback optimistic update
+      patchResult.undo();
+      showToast(error?.data?.detail || "Failed to update cart", "error");
+      throw error;
+    }
+  };
+
+  // Calculate cart totals - only for authenticated users
+  const getCartTotals = () => {
+    return {
+      totalItems: cart?.total_items || 0,
+      totalPrice: cart?.total_price || 0,
+      itemCount: cart?.items?.length || 0,
+      isLoading: isLoading,
+      isErrored: isError,
+    };
+  };
+
   return {
-    cart: isAuthenticated
-      ? cart
-      : { items: localStorageCart.cartItems, ...cartTotals },
-    items,
-    subtotal,
-    tax,
-    total,
-    isLoading: isAuthenticated ? isLoading : false,
-    isError: isAuthenticated ? isError : false,
-    error: isAuthenticated ? error : null,
-    removeFromCart,
-    updateCartItemQuantity,
+    // Cart data - only for authenticated users
+    cart,
+    cartItemMap,
+    items: cart?.items || [],
+
+    // Status
+    isLoading,
+    isError,
+    error,
+
+    // Cart operations
     addToCart,
-    isEmpty: isAuthenticated
-      ? !(cart?.items && cart.items.length > 0)
-      : localStorageCart.isEmpty,
-    isGuestCart: !isAuthenticated,
-    // Migration function for guest to authenticated transition
-    migrateGuestCartToAuthenticated,
-    // O(1) helper functions
+    removeFromCart,
+    updateItemQuantity,
+
+    // Utility functions
     getCartItem,
     isInCart,
     getItemQuantity,
+    getTotalItems,
+    getCartTotals,
+
+    // Operation tracking
+    isActive,
+    activeOperations,
   };
 };

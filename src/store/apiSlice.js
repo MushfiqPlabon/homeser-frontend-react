@@ -1,18 +1,15 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import {
+  getStoredTokens,
+} from "../utils/shared/authUtils";
+import { calculateTax, calculateTotalWithTax } from "../utils/shared/taxUtils";
 
 // Determine the base URL for API requests
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 
-// Helper function to get tokens from localStorage
-const getStoredTokens = () => {
-  try {
-    const stored = localStorage.getItem("homeser_auth_tokens");
-    return stored ? JSON.parse(stored) : { access: null, refresh: null };
-  } catch {
-    return { access: null, refresh: null };
-  }
-};
+// Create a shared refresh promise to prevent multiple simultaneous refreshes
+let refreshPromise = null;
 
 // Create baseQuery with token refresh handling
 const baseQueryWithReauth = async (args, api, extraOptions) => {
@@ -34,31 +31,51 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
     const tokens = getStoredTokens();
     if (tokens.refresh) {
       try {
-        const refreshResult = await baseQuery(
-          {
-            url: "/auth/token/refresh/",
-            method: "POST",
-            body: { refresh: tokens.refresh },
-          },
-          api,
-          extraOptions,
-        );
-
-        if (refreshResult.data?.access) {
-          // Update localStorage with new token
-          localStorage.setItem(
-            "homeser_auth_tokens",
-            JSON.stringify({
-              access: refreshResult.data.access,
-              refresh: refreshResult.data.refresh || tokens.refresh,
-            }),
+        // If there's already a refresh in progress, wait for it
+        if (refreshPromise) {
+          await refreshPromise;
+        } else {
+          // Start a new refresh
+          refreshPromise = baseQuery(
+            {
+              url: "/auth/token/refresh/",
+              method: "POST",
+              body: { refresh: tokens.refresh },
+            },
+            api,
+            extraOptions,
           );
-          // Retry the original request with new token
-          result = await baseQuery(args, api, extraOptions);
+
+          const refreshResult = await refreshPromise;
+
+          if (refreshResult.data?.access) {
+            // Update localStorage with new token
+            localStorage.setItem(
+              "homeser_auth_tokens",
+              JSON.stringify({
+                access: refreshResult.data.access,
+                refresh: refreshResult.data.refresh || tokens.refresh,
+              }),
+            );
+            // Retry the original request with new token
+            result = await baseQuery(args, api, extraOptions);
+          } else {
+            // Refresh failed, clear tokens and redirect to login
+            localStorage.removeItem("homeser_auth_tokens");
+            // Optionally redirect to login page
+          }
         }
       } catch (_refreshError) {
         console.warn("Token refresh failed");
+        // Clear tokens when refresh fails
+        localStorage.removeItem("homeser_auth_tokens");
+      } finally {
+        // Reset the refresh promise
+        refreshPromise = null;
       }
+    } else {
+      // No refresh token available, clear existing tokens
+      localStorage.removeItem("homeser_auth_tokens");
     }
   }
 
@@ -113,13 +130,13 @@ export const apiSlice = createApi({
               });
             }
 
-            // Recalculate totals
+            // Recalculate totals using tax utilities
             draft.subtotal = draft.items.reduce(
               (sum, item) => sum + item.quantity * item.price,
               0,
             );
-            draft.tax = draft.subtotal * 0.05;
-            draft.total = draft.subtotal + draft.tax;
+            draft.tax = calculateTax(draft.subtotal);
+            draft.total = calculateTotalWithTax(draft.subtotal);
           }),
         );
 
@@ -148,13 +165,13 @@ export const apiSlice = createApi({
               (item) => item.service.id !== serviceId,
             );
 
-            // Recalculate totals
+            // Recalculate totals using tax utilities
             draft.subtotal = draft.items.reduce(
               (sum, item) => sum + item.quantity * item.price,
               0,
             );
-            draft.tax = draft.subtotal * 0.05;
-            draft.total = draft.subtotal + draft.tax;
+            draft.tax = calculateTax(draft.subtotal);
+            draft.total = calculateTotalWithTax(draft.subtotal);
           }),
         );
 
@@ -193,13 +210,13 @@ export const apiSlice = createApi({
                 draft.items[existingItemIndex].quantity *
                 draft.items[existingItemIndex].price;
 
-              // Recalculate totals
+              // Recalculate totals using tax utilities
               draft.subtotal = draft.items.reduce(
                 (sum, item) => sum + item.quantity * item.price,
                 0,
               );
-              draft.tax = draft.subtotal * 0.05;
-              draft.total = draft.subtotal + draft.tax;
+              draft.tax = calculateTax(draft.subtotal);
+              draft.total = calculateTotalWithTax(draft.subtotal);
             }
           }),
         );
