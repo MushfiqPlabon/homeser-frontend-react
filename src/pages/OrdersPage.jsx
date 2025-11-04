@@ -225,7 +225,7 @@ const OrdersPage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 backdrop-blur-sm bg-white/30 rounded-full p-2"></div>
       </div>
     );
@@ -233,7 +233,7 @@ const OrdersPage = () => {
 
   if (isError) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
         <div className="text-center card">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
             Error Loading Orders
@@ -254,7 +254,7 @@ const OrdersPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50 py-8">
+    <div className="min-h-screen bg-linear-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center space-x-3 mb-8">
           <ClipboardDocumentListIcon className="h-8 w-8 text-primary-600" />
@@ -271,7 +271,7 @@ const OrdersPage = () => {
               >
                 Search Orders
               </label>
-              <div className="relative rounded-md shadow-sm">
+              <div className="relative rounded-md shadow-xs">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
                 </div>
@@ -483,7 +483,7 @@ const OrdersPage = () => {
                         onClick={() =>
                           setReviewForm({ ...reviewForm, rating: star })
                         }
-                        className="focus:outline-none"
+                        className="focus:outline-hidden"
                       >
                         {star <= reviewForm.rating ? (
                           <StarIconSolid className="h-6 w-6 text-yellow-400" />

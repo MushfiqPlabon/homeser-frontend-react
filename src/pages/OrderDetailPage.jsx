@@ -110,7 +110,7 @@ const OrderDetailPage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50 py-8">
+      <div className="min-h-screen bg-linear-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50 py-8">
         <OrderSkeleton />
       </div>
     );
@@ -118,7 +118,7 @@ const OrderDetailPage = () => {
 
   if (isError) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
         <div className="text-center card">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
             Error Loading Order
@@ -150,7 +150,7 @@ const OrderDetailPage = () => {
 
   if (!order) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
         <div className="text-center card">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
             Order Not Found
@@ -260,7 +260,7 @@ const OrderDetailPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50 py-8">
+    <div className="min-h-screen bg-linear-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
           <button
@@ -324,7 +324,7 @@ const OrderDetailPage = () => {
                     key={item.id}
                     className="flex border-b border-gray-200/50 pb-4 last:border-0 last:pb-0"
                   >
-                    <div className="flex-shrink-0 w-16 h-16 rounded-lg bg-gray-200 flex items-center justify-center mr-4">
+                    <div className="shrink-0 w-16 h-16 rounded-lg bg-gray-200 flex items-center justify-center mr-4">
                       <img
                         src={item.service?.image_url}
                         alt={item.service?.name}
@@ -378,7 +378,7 @@ const OrderDetailPage = () => {
               </h2>
               <div className="space-y-3">
                 <div className="flex items-start">
-                  <div className="flex-shrink-0">
+                  <div className="shrink-0">
                     <span className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-blue-100 text-blue-600">
                       <svg
                         className="h-6 w-6"
@@ -412,7 +412,7 @@ const OrderDetailPage = () => {
                 </div>
 
                 <div className="flex items-start">
-                  <div className="flex-shrink-0">
+                  <div className="shrink-0">
                     <MapPinIcon className="h-5 w-5 text-gray-400" />
                   </div>
                   <div className="ml-4">
@@ -423,7 +423,7 @@ const OrderDetailPage = () => {
                 </div>
 
                 <div className="flex items-start">
-                  <div className="flex-shrink-0">
+                  <div className="shrink-0">
                     <CalendarIcon className="h-5 w-5 text-gray-400" />
                   </div>
                   <div className="ml-4">
@@ -436,7 +436,7 @@ const OrderDetailPage = () => {
 
                 {order.transaction_id && (
                   <div className="flex items-start">
-                    <div className="flex-shrink-0">
+                    <div className="shrink-0">
                       <CurrencyDollarIcon className="h-5 w-5 text-gray-400" />
                     </div>
                     <div className="ml-4">
@@ -499,7 +499,7 @@ const OrderDetailPage = () => {
                         onClick={() =>
                           setReviewForm({ ...reviewForm, rating: star })
                         }
-                        className="focus:outline-none"
+                        className="focus:outline-hidden"
                         aria-label={`Rate ${star} star${star !== 1 ? "s" : ""}`}
                       >
                         {star <= reviewForm.rating ? (

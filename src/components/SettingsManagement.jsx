@@ -290,7 +290,7 @@ const SettingsManagement = () => {
                       <input
                         id={siteNameId}
                         type="text"
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                         value={formData.general?.site_name || ""}
                         onChange={(e) =>
                           handleInputChange(
@@ -311,7 +311,7 @@ const SettingsManagement = () => {
                       <textarea
                         id={siteDescriptionId}
                         rows="3"
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                         value={formData.general?.site_description || ""}
                         onChange={(e) =>
                           handleInputChange(
@@ -332,7 +332,7 @@ const SettingsManagement = () => {
                       <input
                         id={contactEmailId}
                         type="email"
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                         value={formData.general?.contact_email || ""}
                         onChange={(e) =>
                           handleInputChange(
@@ -353,7 +353,7 @@ const SettingsManagement = () => {
                       <input
                         id={adminEmailId}
                         type="email"
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                         value={formData.general?.admin_email || ""}
                         onChange={(e) =>
                           handleInputChange(
@@ -394,7 +394,7 @@ const SettingsManagement = () => {
                       </label>
                       <select
                         id={paymentGatewayId}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                         value={formData.payment?.gateway || ""}
                         onChange={(e) =>
                           handleInputChange(
@@ -418,7 +418,7 @@ const SettingsManagement = () => {
                       </label>
                       <select
                         id={currencyId}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                         value={formData.payment?.currency || ""}
                         onChange={(e) =>
                           handleInputChange(
@@ -446,7 +446,7 @@ const SettingsManagement = () => {
                         step="0.01"
                         min="0"
                         max="100"
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                         value={formData.payment?.tax_rate || ""}
                         onChange={(e) =>
                           handleInputChange(
@@ -461,7 +461,7 @@ const SettingsManagement = () => {
                       <input
                         type="checkbox"
                         id={sandboxModeCheckboxId}
-                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded-sm"
                         checked={formData.payment?.sandbox_mode || false}
                         onChange={(e) =>
                           handleInputChange(
@@ -509,7 +509,7 @@ const SettingsManagement = () => {
                       <input
                         id={smtpHostId}
                         type="text"
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                         value={formData.email?.smtp_host || ""}
                         onChange={(e) =>
                           handleInputChange(
@@ -530,7 +530,7 @@ const SettingsManagement = () => {
                       <input
                         id={smtpPortId}
                         type="number"
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                         value={formData.email?.smtp_port || ""}
                         onChange={(e) =>
                           handleInputChange(
@@ -551,7 +551,7 @@ const SettingsManagement = () => {
                       <input
                         id={smtpUsernameId}
                         type="text"
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                         value={formData.email?.smtp_username || ""}
                         onChange={(e) =>
                           handleInputChange(
@@ -572,7 +572,7 @@ const SettingsManagement = () => {
                       <input
                         id={smtpPasswordId}
                         type="password"
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                         value={formData.email?.smtp_password || ""}
                         onChange={(e) =>
                           handleInputChange(
@@ -593,7 +593,7 @@ const SettingsManagement = () => {
                       <input
                         id={fromEmailId}
                         type="email"
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                         value={formData.email?.from_email || ""}
                         onChange={(e) =>
                           handleInputChange(
@@ -614,7 +614,7 @@ const SettingsManagement = () => {
                       <input
                         id={fromNameId}
                         type="text"
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                         value={formData.email?.from_name || ""}
                         onChange={(e) =>
                           handleInputChange(
@@ -655,7 +655,7 @@ const SettingsManagement = () => {
                       </label>
                       <select
                         id={storageBackendId}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                         value={formData.media?.storage_backend || ""}
                         onChange={(e) =>
                           handleInputChange(
@@ -680,7 +680,7 @@ const SettingsManagement = () => {
                       <input
                         id={maxUploadSizeId}
                         type="number"
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                         value={formData.media?.max_upload_size || ""}
                         onChange={(e) =>
                           handleInputChange(
@@ -701,7 +701,7 @@ const SettingsManagement = () => {
                       <input
                         id={allowedFileTypesId}
                         type="text"
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                         value={formData.media?.allowed_file_types || ""}
                         onChange={(e) =>
                           handleInputChange(
@@ -725,7 +725,7 @@ const SettingsManagement = () => {
                         type="number"
                         min="1"
                         max="100"
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                         value={formData.media?.image_quality || ""}
                         onChange={(e) =>
                           handleInputChange(
@@ -767,7 +767,7 @@ const SettingsManagement = () => {
                       <input
                         id={sessionTimeoutId}
                         type="number"
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                         value={formData.security?.session_timeout || ""}
                         onChange={(e) =>
                           handleInputChange(
@@ -788,7 +788,7 @@ const SettingsManagement = () => {
                       <input
                         id={passwordMinLengthId}
                         type="number"
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                         value={formData.security?.password_min_length || ""}
                         onChange={(e) =>
                           handleInputChange(
@@ -803,7 +803,7 @@ const SettingsManagement = () => {
                       <input
                         type="checkbox"
                         id={requireSpecialCharsCheckboxId}
-                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded-sm"
                         checked={
                           formData.security?.require_special_chars || false
                         }
@@ -826,7 +826,7 @@ const SettingsManagement = () => {
                       <input
                         type="checkbox"
                         id={twoFactorAuthCheckboxId}
-                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded-sm"
                         checked={formData.security?.two_factor_auth || false}
                         onChange={(e) =>
                           handleInputChange(
@@ -874,7 +874,7 @@ const SettingsManagement = () => {
                       <input
                         id={cacheTimeoutId}
                         type="number"
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                         value={formData.performance?.cache_timeout || ""}
                         onChange={(e) =>
                           handleInputChange(
@@ -895,7 +895,7 @@ const SettingsManagement = () => {
                       <input
                         id={dbConnectionPoolId}
                         type="number"
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                         value={formData.performance?.db_connection_pool || ""}
                         onChange={(e) =>
                           handleInputChange(
@@ -916,7 +916,7 @@ const SettingsManagement = () => {
                       <input
                         id={queryTimeoutId}
                         type="number"
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                         value={formData.performance?.query_timeout || ""}
                         onChange={(e) =>
                           handleInputChange(
@@ -931,7 +931,7 @@ const SettingsManagement = () => {
                       <input
                         type="checkbox"
                         id={enableQueryCacheCheckboxId}
-                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded-sm"
                         checked={
                           formData.performance?.enable_query_cache || false
                         }

@@ -315,7 +315,7 @@ const ReviewManagement = () => {
                       key={star}
                       type="button"
                       onClick={() => handleStarClick(star)}
-                      className="focus:outline-none"
+                      className="focus:outline-hidden"
                     >
                       <span className="text-yellow-400">
                         {star <= editFormData.rating ? (
@@ -338,7 +338,7 @@ const ReviewManagement = () => {
                 </div>
                 <textarea
                   rows="4"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                   value={editFormData.text}
                   onChange={(e) =>
                     setEditFormData({ ...editFormData, text: e.target.value })
@@ -357,7 +357,7 @@ const ReviewManagement = () => {
                       is_approved: e.target.checked,
                     })
                   }
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded-sm"
                 />
                 <label
                   htmlFor={isApprovedCheckboxId}

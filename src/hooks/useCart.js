@@ -8,16 +8,8 @@ import {
   useRemoveFromCartMutation,
   useUpdateCartItemQuantityMutation,
 } from "../store/apiSlice";
+import { createCartMap } from "../utils/cartUtils";
 import { useLocalStorageCart } from "./useLocalStorageCart";
-
-// Create a Map for O(1) cart item lookup
-const createCartMap = (items) => {
-  const map = new Map();
-  items?.forEach((item) => {
-    map.set(item.service.id, item);
-  });
-  return map;
-};
 
 export const useCart = () => {
   const { isAuthenticated } = useAuth();

@@ -4,7 +4,7 @@
 import { useId, useState } from "react";
 import { Link } from "react-router-dom";
 import LoadingSpinner from "../components/LoadingSpinner";
-import { authAPI } from "../utils/api";
+import { useRequestPasswordResetMutation } from "../store/extendedApiSlice";
 import { handleApiError } from "../utils/errorHandler";
 
 const ForgotPassword = () => {
@@ -15,6 +15,8 @@ const ForgotPassword = () => {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  const [requestPasswordReset] = useRequestPasswordResetMutation();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -22,8 +24,8 @@ const ForgotPassword = () => {
     setError("");
 
     try {
-      const response = await authAPI.passwordReset(email);
-      setMessage(response.data.message);
+      const response = await requestPasswordReset({ email }).unwrap();
+      setMessage(response.message);
       setEmail(""); // Clear form
     } catch (err) {
       const errorData = handleApiError(err);
@@ -59,7 +61,7 @@ const ForgotPassword = () => {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
+              className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
               placeholder="Enter your email address"
             />
           </div>
@@ -80,7 +82,7 @@ const ForgotPassword = () => {
             <button
               type="submit"
               disabled={loading || !email.trim()}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? <LoadingSpinner size="sm" /> : "Send Reset Link"}
             </button>

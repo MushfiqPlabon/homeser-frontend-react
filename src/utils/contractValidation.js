@@ -1,6 +1,5 @@
 import Ajv from "ajv";
 import addFormats from "ajv-formats";
-import { API_BASE_URL } from "../config/api";
 
 // Initialize Ajv instance with options
 const ajv = new Ajv({
@@ -36,32 +35,28 @@ export const validateContract = (responseData, schema) => {
 };
 
 /**
- * Fetches the API contract schema from the backend
+ * Fetches the API contract schema from the backend using RTK Query
+ * @param {function} getApiContractsQuery - The RTK Query hook for getting contracts
  * @param {string} endpoint - The API endpoint to get contract for
  * @returns {Promise<object>} - The JSON Schema for the endpoint
  */
-export const fetchContractSchema = async (endpoint) => {
+export const fetchContractSchema = async (getApiContractsQuery) => {
   try {
-    // Replace slashes with hyphens for a valid URL segment
-    const _normalizedEndpoint = endpoint
-      .replace(/^\//, "") // Remove leading slash
-      .replace(/\//g, "-") // Replace other slashes with hyphens
-      .replace(/:/g, "-"); // Replace colons (for parameters like /api/services/{id}/) with hyphens
+    // Use the RTK Query hook to get contracts
+    const result = await getApiContractsQuery();
 
-    const response = await fetch(`${API_BASE_URL}/contracts/all/`);
-
-    if (!response.ok) {
+    if (result.error) {
       throw new Error(
-        `Failed to fetch contract schema: ${response.status} ${response.statusText}`,
+        `Failed to fetch contract schema: ${result.error.message}`,
       );
     }
 
-    const contractsData = await response.json();
-    const contracts = contractsData.contracts;
+    const contractsData = result.data;
+    const contracts = contractsData?.contracts;
 
-    // For now, return the root schema - in a complete implementation
+    // Return the root schema - in a complete implementation
     // you would match the specific endpoint to its schema
-    return contracts;
+    return contracts || {};
   } catch (_error) {
     // Error fetching contract schema
     // Return a basic schema to avoid breaking the app if contract fetching fails

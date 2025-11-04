@@ -5,7 +5,12 @@ import {
   useEffect,
   useState,
 } from "react";
-import api, { authAPI, setTokenRefreshFunction } from "../utils/api";
+import {
+  useGetProfileQuery,
+  useLoginMutation,
+  useLogoutMutation,
+  useRegisterMutation,
+} from "../store/extendedApiSlice";
 import { useToast } from "./ToastContext";
 
 const AuthContext = createContext();
@@ -59,57 +64,36 @@ export const AuthProvider = ({ children }) => {
   // Initialize tokens from localStorage to persist across refresh
   const [authTokens, setAuthTokens] = useState(() => getStoredTokens());
 
+  // RTK Query mutations and queries
+  const [loginApi] = useLoginMutation();
+  const [registerApi] = useRegisterMutation();
+  const [logoutApi] = useLogoutMutation();
+
   // Computed auth state
   const isAuthenticated = Boolean(authTokens.access && user);
 
-  const logout = () => {
-    api
-      .post("/auth/logout/", {})
-      .catch((error) => {
-        console.warn("Logout endpoint error:", error);
-      })
-      .finally(() => {
-        setAuthTokens({ access: null, refresh: null });
-        clearStoredTokens();
-        setUser(null);
-        showToast("You have been logged out successfully", "info");
-      });
-  };
+  // Use the profile query to get user data
+  const { data: profileData, isLoading: profileLoading } = useGetProfileQuery(
+    undefined,
+    {
+      skip: !authTokens.access, // Only run if we have an access token
+    },
+  );
 
-  const refreshToken = useCallback(async () => {
+  const logout = useCallback(async () => {
     try {
-      const tokens = getStoredTokens();
-      if (!tokens.refresh) {
-        throw new Error("No refresh token available");
-      }
-
-      const response = await api.post("/auth/token/refresh/", {
-        refresh: tokens.refresh,
-      });
-
-      const { access, refresh } = response.data;
-      if (!access) {
-        throw new Error("No access token in refresh response");
-      }
-
-      const newTokens = { access, refresh: refresh || tokens.refresh };
-      setAuthTokens(newTokens);
-      setStoredTokens(newTokens);
-
-      return access;
+      // Call the logout mutation
+      await logoutApi();
     } catch (error) {
-      console.error("Token refresh failed:", error);
+      console.warn("Logout endpoint error:", error);
+    } finally {
+      // Always clear local state
       setAuthTokens({ access: null, refresh: null });
       clearStoredTokens();
       setUser(null);
-      throw error;
+      showToast("You have been logged out successfully", "info");
     }
-  }, []);
-
-  // Set the token refresh function in the api module
-  useEffect(() => {
-    setTokenRefreshFunction(refreshToken);
-  }, [refreshToken]);
+  }, [logoutApi, showToast]);
 
   // Initialize auth state on mount
   useEffect(() => {
@@ -117,9 +101,8 @@ export const AuthProvider = ({ children }) => {
       const tokens = getStoredTokens();
       if (tokens.access) {
         try {
-          const response = await authAPI.getProfile();
-          console.log("User object from API:", response.data?.user);
-          setUser(response.data?.user || null);
+          // User will be set via the useGetProfileQuery hook
+          setUser(profileData?.user || null);
         } catch (error) {
           console.error("Failed to fetch user:", error);
           // Clear invalid tokens
@@ -132,18 +115,25 @@ export const AuthProvider = ({ children }) => {
     };
 
     initializeAuth();
-  }, []); // Run only once on mount
+  }, [profileData]); // Run when profile data changes
 
   // Sync tokens to localStorage whenever they change
   useEffect(() => {
     setStoredTokens(authTokens);
   }, [authTokens]);
 
+  // Update user when profile data changes
+  useEffect(() => {
+    if (profileData?.user) {
+      setUser(profileData.user);
+    }
+  }, [profileData]);
+
   const login = useCallback(
     async (credentials) => {
       try {
-        const response = await authAPI.login(credentials);
-        const { access, refresh, user } = response.data;
+        const response = await loginApi(credentials).unwrap();
+        const { access, refresh, user } = response;
 
         // Store tokens in memory and localStorage
         const newTokens = { access, refresh };
@@ -158,29 +148,41 @@ export const AuthProvider = ({ children }) => {
 
         return { success: true };
       } catch (error) {
-        showToast(error.response?.data?.detail || "Login failed", "error");
-        return { success: false, error: error.response?.data };
+        const errorMessage =
+          error?.data?.detail || error?.data?.message || "Login failed";
+        showToast(errorMessage, "error");
+        return { success: false, error: error?.data };
       }
     },
-    [showToast],
+    [loginApi, showToast],
   );
 
   const register = useCallback(
     async (userData) => {
       try {
-        const response = await authAPI.register(userData);
-        showToast("Registration successful! Please log in.", "success");
-        return { success: true, data: response.data };
+        const response = await registerApi(userData).unwrap();
+        const { access, refresh, user } = response;
+
+        // Store tokens in memory and localStorage
+        const newTokens = { access, refresh };
+        setAuthTokens(newTokens);
+        setStoredTokens(newTokens);
+        setUser(user);
+
+        showToast(
+          `Registration successful! Welcome, ${user.first_name || user.username}!`,
+          "success",
+        );
+
+        return { success: true, data: response };
       } catch (error) {
         const errorMessage =
-          error.response?.data?.detail ||
-          error.response?.data?.message ||
-          "Registration failed";
+          error?.data?.detail || error?.data?.message || "Registration failed";
         showToast(errorMessage, "error");
-        return { success: false, error: error.response?.data };
+        return { success: false, error: error?.data };
       }
     },
-    [showToast],
+    [registerApi, showToast],
   );
 
   const hasRole = (role) => {
@@ -192,12 +194,11 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     isAuthenticated,
-    loading,
+    loading: loading || profileLoading,
     login,
     logout,
     register,
     authTokens,
-    refreshToken,
     hasRole,
     isAdmin,
   };

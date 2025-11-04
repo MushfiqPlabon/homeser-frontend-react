@@ -13,10 +13,10 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useWebSocket } from "../context/WebSocketContext";
 import {
-  useDeleteReview,
-  useUpdateReview,
-  useUserReviews,
-} from "../hooks/useApi";
+  useDeleteReviewMutation,
+  useGetUserReviewsQuery,
+  useUpdateReviewMutation,
+} from "../store/extendedApiSlice";
 import { renderStars } from "../utils/uiUtils.jsx";
 
 const ReviewsPage = () => {
@@ -39,9 +39,9 @@ const ReviewsPage = () => {
     isError,
     error,
     refetch,
-  } = useUserReviews();
-  const [updateReview] = useUpdateReview();
-  const [deleteReview] = useDeleteReview();
+  } = useGetUserReviewsQuery();
+  const [updateReview] = useUpdateReviewMutation();
+  const [deleteReview] = useDeleteReviewMutation();
 
   // Update real-time reviews when the API data changes
   useEffect(() => {
@@ -176,7 +176,7 @@ const ReviewsPage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 backdrop-blur-sm bg-white/30 rounded-full p-2"></div>
       </div>
     );
@@ -184,7 +184,7 @@ const ReviewsPage = () => {
 
   if (isError) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
         <div className="text-center card">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
             Error Loading Reviews
@@ -205,7 +205,7 @@ const ReviewsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50 py-8">
+    <div className="min-h-screen bg-linear-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center space-x-3 mb-8">
           <ChatBubbleLeftRightIcon className="h-8 w-8 text-primary-600" />
@@ -287,7 +287,7 @@ const ReviewsPage = () => {
 
                   <div className="border-t border-gray-200/50 pt-4">
                     <div className="flex items-center mb-2">
-                      <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                      <div className="shrink-0 h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
                         {review.service?.image_url ? (
                           <img
                             src={review.service.image_url}
@@ -355,7 +355,7 @@ const ReviewsPage = () => {
                         onClick={() =>
                           setEditForm({ ...editForm, rating: star })
                         }
-                        className="focus:outline-none"
+                        className="focus:outline-hidden"
                         aria-label={`Rate ${star} star${star !== 1 ? "s" : ""}`}
                       >
                         {star <= editForm.rating ? (

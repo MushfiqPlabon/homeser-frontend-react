@@ -10,7 +10,7 @@ const NotificationBell = () => {
         type="button"
         className={`p-1 rounded-full ${
           isConnected ? "text-gray-700 hover:text-primary-600" : "text-red-500"
-        } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors`}
+        } focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors`}
       >
         <span className="sr-only">View notifications</span>
         <BellIcon

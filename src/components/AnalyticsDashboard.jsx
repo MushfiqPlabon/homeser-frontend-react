@@ -275,7 +275,7 @@ const RevenueTab = memo(({ paymentAnalytics, formatCurrency }) => (
 const SearchTab = memo(({ searchAnalytics, popularSearches }) => (
   <div className="space-y-6">
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div className="bg-white p-6 rounded-lg shadow">
+      <div className="bg-white p-6 rounded-lg shadow-sm">
         <h3 className="text-lg font-medium mb-4">Search Statistics</h3>
         <div className="space-y-2">
           <div className="flex justify-between">
@@ -292,7 +292,7 @@ const SearchTab = memo(({ searchAnalytics, popularSearches }) => (
           </div>
         </div>
       </div>
-      <div className="bg-white p-6 rounded-lg shadow">
+      <div className="bg-white p-6 rounded-lg shadow-sm">
         <h3 className="text-lg font-medium mb-4">Popular Searches</h3>
         <div className="space-y-2">
           {popularSearches?.map((search) => (
@@ -348,9 +348,9 @@ const EmailTab = memo(({ emailStats, formatPercentage }) => (
 
 // Memoized metric card component
 const MetricCard = memo(({ title, value, icon: Icon, trend }) => (
-  <div className="bg-white p-6 rounded-lg shadow">
+  <div className="bg-white p-6 rounded-lg shadow-sm">
     <div className="flex items-center">
-      <div className="flex-shrink-0">
+      <div className="shrink-0">
         <Icon className="h-8 w-8 text-primary-600" />
       </div>
       <div className="ml-5 w-0 flex-1">

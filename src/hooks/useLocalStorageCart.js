@@ -111,7 +111,7 @@ export const useLocalStorageCart = () => {
       (sum, item) => sum + item.quantity * item.price,
       0,
     );
-    const tax = subtotal * 0.05; // 5% tax
+    const tax = subtotal * 0.15; // 15% tax (consistent with backend)
     const total = subtotal + tax;
 
     return { subtotal, tax, total };

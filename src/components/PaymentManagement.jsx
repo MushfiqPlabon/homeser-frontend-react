@@ -372,7 +372,7 @@ const PaymentManagement = () => {
                   step="0.01"
                   min="0"
                   max={selectedPayment.total}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                   value={refundData.amount}
                   onChange={(e) =>
                     setRefundData({ ...refundData, amount: e.target.value })
@@ -389,7 +389,7 @@ const PaymentManagement = () => {
                 <textarea
                   id={refundReasonId}
                   rows="3"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                   value={refundData.reason}
                   onChange={(e) =>
                     setRefundData({ ...refundData, reason: e.target.value })
@@ -477,7 +477,7 @@ const PaymentManagement = () => {
                 <textarea
                   id={disputeReasonId}
                   rows="4"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                   value={disputeData.reason}
                   onChange={(e) =>
                     setDisputeData({ ...disputeData, reason: e.target.value })

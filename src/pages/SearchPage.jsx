@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 import LazyImage from "../components/LazyImage";
 import { usePopularSearches, useSearchAnalytics } from "../hooks/useApi";
 import useDebounce from "../hooks/useDebounce";
-import { searchAPI } from "../utils/api";
+import { useAdvancedSearchQuery } from "../store/extendedApiSlice";
 import { getFallbackImage } from "../utils/imageUtils";
 import { renderStars } from "../utils/uiUtils.jsx";
 
@@ -62,6 +62,15 @@ const SearchPage = memo(() => {
   const { data: searchAnalytics } = useSearchAnalytics();
   const { data: popularSearches } = usePopularSearches({ limit: 10 });
 
+  const [
+    triggerSearch,
+    {
+      data: searchResponse,
+      isLoading: isSearchLoading,
+      isError: isSearchError,
+    },
+  ] = useAdvancedSearchQuery();
+
   // Memoized search function
   const performSearch = useCallback(
     async (query) => {
@@ -74,13 +83,18 @@ const SearchPage = memo(() => {
       setError("");
 
       try {
-        const response = await searchAPI.advancedSearch({
+        // Trigger the RTK Query
+        const result = await triggerSearch({
           q: searchQuery,
           limit: searchLimit,
           language: searchLanguage,
         });
 
-        setSearchResults(response.data?.results || []);
+        if ("data" in result) {
+          setSearchResults(result.data?.results || []);
+        } else {
+          throw new Error("Search failed");
+        }
       } catch (err) {
         setError("Failed to perform search. Please try again.");
         console.error("Search error:", err);
@@ -88,8 +102,15 @@ const SearchPage = memo(() => {
         setIsLoading(false);
       }
     },
-    [searchQuery, searchLimit, searchLanguage],
+    [searchQuery, searchLimit, searchLanguage, triggerSearch],
   );
+
+  // Load search results when the searchResponse changes
+  useEffect(() => {
+    if (searchResponse) {
+      setSearchResults(searchResponse.results || []);
+    }
+  }, [searchResponse]);
 
   // Handle search on query change with debounce
   useEffect(() => {
@@ -120,7 +141,7 @@ const SearchPage = memo(() => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50 py-8">
+    <div className="min-h-screen bg-linear-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center space-x-3 mb-8">
           <MagnifyingGlassIcon className="h-8 w-8 text-primary-600" />
@@ -138,7 +159,7 @@ const SearchPage = memo(() => {
                 >
                   Search Query
                 </label>
-                <div className="relative rounded-md shadow-sm">
+                <div className="relative rounded-md shadow-xs">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
                   </div>
@@ -162,7 +183,7 @@ const SearchPage = memo(() => {
                 </label>
                 <select
                   id={searchLimitId}
-                  className="w-full px-3 py-2 border border-gray-300/50 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 backdrop-blur-sm bg-white/50"
+                  className="w-full px-3 py-2 border border-gray-300/50 rounded-lg focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 backdrop-blur-sm bg-white/50"
                   value={searchLimit}
                   onChange={(e) => setSearchLimit(Number(e.target.value))}
                 >
@@ -181,7 +202,7 @@ const SearchPage = memo(() => {
                 </label>
                 <select
                   id={searchLanguageId}
-                  className="w-full px-3 py-2 border border-gray-300/50 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 backdrop-blur-sm bg-white/50"
+                  className="w-full px-3 py-2 border border-gray-300/50 rounded-lg focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 backdrop-blur-sm bg-white/50"
                   value={searchLanguage}
                   onChange={(e) => setSearchLanguage(e.target.value)}
                 >
@@ -214,7 +235,7 @@ const SearchPage = memo(() => {
                   </label>
                   <select
                     id={categoryFilterId}
-                    className="w-full px-3 py-2 border border-gray-300/50 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 backdrop-blur-sm bg-white/50"
+                    className="w-full px-3 py-2 border border-gray-300/50 rounded-lg focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 backdrop-blur-sm bg-white/50"
                   >
                     <option value="">All Categories</option>
                     <option value="plumbing">Plumbing</option>
@@ -232,13 +253,13 @@ const SearchPage = memo(() => {
                       type="number"
                       id={minPriceId}
                       placeholder="Min"
-                      className="w-full px-3 py-2 border border-gray-300/50 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 backdrop-blur-sm bg-white/50"
+                      className="w-full px-3 py-2 border border-gray-300/50 rounded-lg focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 backdrop-blur-sm bg-white/50"
                     />
                     <input
                       type="number"
                       id={maxPriceId}
                       placeholder="Max"
-                      className="w-full px-3 py-2 border border-gray-300/50 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 backdrop-blur-sm bg-white/50"
+                      className="w-full px-3 py-2 border border-gray-300/50 rounded-lg focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 backdrop-blur-sm bg-white/50"
                     />
                   </div>
                 </div>
@@ -252,7 +273,7 @@ const SearchPage = memo(() => {
                   </label>
                   <select
                     id={ratingFilterId}
-                    className="w-full px-3 py-2 border border-gray-300/50 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 backdrop-blur-sm bg-white/50"
+                    className="w-full px-3 py-2 border border-gray-300/50 rounded-lg focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 backdrop-blur-sm bg-white/50"
                   >
                     <option value="">Any Rating</option>
                     <option value="5">5 Stars</option>
@@ -280,13 +301,15 @@ const SearchPage = memo(() => {
                 </span>
               </div>
 
-              {isLoading ? (
+              {isLoading || isSearchLoading ? (
                 <div className="flex justify-center items-center h-64">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 backdrop-blur-sm bg-white/30 rounded-full p-2"></div>
                 </div>
-              ) : error ? (
+              ) : error || isSearchError ? (
                 <div className="text-center py-12">
-                  <div className="text-red-500 mb-4">{error}</div>
+                  <div className="text-red-500 mb-4">
+                    {error || "Search failed"}
+                  </div>
                   <button
                     type="button"
                     onClick={performSearch}
@@ -324,7 +347,7 @@ const SearchPage = memo(() => {
                       key={result.id}
                       className="flex items-start p-4 border border-gray-200/50 rounded-lg backdrop-blur-sm bg-white/50 hover:bg-gray-50/30 transition-colors"
                     >
-                      <div className="flex-shrink-0 w-24 h-24 rounded-lg bg-gray-200 flex items-center justify-center mr-6">
+                      <div className="shrink-0 w-24 h-24 rounded-lg bg-gray-200 flex items-center justify-center mr-6">
                         {result.image_url ? (
                           <LazyImage
                             src={result.image_url}
@@ -449,7 +472,7 @@ const SearchPage = memo(() => {
                       <span className="text-sm text-gray-700">
                         #{index + 1} {search.query}
                       </span>
-                      <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                      <span className="text-xs bg-gray-100 px-2 py-1 rounded-sm">
                         {search.count}
                       </span>
                     </button>

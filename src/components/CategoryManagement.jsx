@@ -167,7 +167,7 @@ const CategoryManagement = () => {
                   <tr key={category.id} className="hover:bg-gray-50/30">
                     <td className="px-6 py-4">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10">
+                        <div className="shrink-0 h-10 w-10">
                           <QueueListIcon className="h-10 w-10 text-gray-400" />
                         </div>
                         <div className="ml-4">
@@ -274,7 +274,7 @@ const CategoryManagement = () => {
                 <input
                   id={categoryNameId}
                   type="text"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                   value={formData.name}
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
@@ -291,7 +291,7 @@ const CategoryManagement = () => {
                 <textarea
                   id={categoryDescriptionId}
                   rows="3"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                   value={formData.description}
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
@@ -308,7 +308,7 @@ const CategoryManagement = () => {
                 <input
                   id={categoryImageUrlId}
                   type="text"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                   value={formData.image_url}
                   onChange={(e) =>
                     setFormData({ ...formData, image_url: e.target.value })
@@ -323,7 +323,7 @@ const CategoryManagement = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, is_active: e.target.checked })
                   }
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded-sm"
                 />
                 <label
                   htmlFor={categoryIsActiveId}
@@ -380,7 +380,7 @@ const CategoryManagement = () => {
                 <input
                   id={categoryNameId}
                   type="text"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                   value={formData.name}
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
@@ -397,7 +397,7 @@ const CategoryManagement = () => {
                 <textarea
                   id={categoryDescriptionId}
                   rows="3"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                   value={formData.description}
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
@@ -414,7 +414,7 @@ const CategoryManagement = () => {
                 <input
                   id={categoryImageUrlId}
                   type="text"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300/50 rounded-md shadow-xs focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                   value={formData.image_url}
                   onChange={(e) =>
                     setFormData({ ...formData, image_url: e.target.value })
@@ -429,7 +429,7 @@ const CategoryManagement = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, is_active: e.target.checked })
                   }
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded-sm"
                 />
                 <label
                   htmlFor={categoryIsActiveId}

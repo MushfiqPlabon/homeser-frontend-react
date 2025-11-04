@@ -58,13 +58,13 @@ const AnimatedServiceCard = ({ service, onAddToCart }) => {
         <div className="pt-4 flex justify-between">
           <AnimatedButton
             onClick={() => onAddToCart(service)}
-            className="flex items-center space-x-1 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+            className="flex items-center space-x-1 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
           >
             <ShoppingCartIcon className="h-5 w-5" />
             <span>Add to Cart</span>
           </AnimatedButton>
 
-          <AnimatedButton className="px-4 py-2 text-gray-700 hover:text-primary-600 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+          <AnimatedButton className="px-4 py-2 text-gray-700 hover:text-primary-600 rounded-md focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
             <span>Details</span>
           </AnimatedButton>
         </div>

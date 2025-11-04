@@ -31,7 +31,7 @@ const ToastNotification = ({
         <button
           type="button"
           onClick={onClose}
-          className="ml-4 text-white hover:text-gray-200 focus:outline-none"
+          className="ml-4 text-white hover:text-gray-200 focus:outline-hidden"
         >
           &times;
         </button>

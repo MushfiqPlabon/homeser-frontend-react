@@ -16,15 +16,15 @@ import { useAuth } from "../context/AuthContext";
 import {
   useDeleteServiceProviderServiceMutation,
   useGetServiceProviderServicesQuery,
+  useGetUserOrdersQuery,
 } from "../store/extendedApiSlice";
-import { ordersAPI } from "../utils/api";
 
 const Dashboard = () => {
   const { isAuthenticated, user, hasRole, isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState("orders");
   const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [loading, _setLoading] = useState(true);
+  const [error, _setError] = useState("");
   const [_services, _setServices] = useState([]);
   const [_servicesLoading, _setServicesLoading] = useState(false);
   const [_servicesError, _setServicesError] = useState("");
@@ -61,28 +61,23 @@ const Dashboard = () => {
     }
   }, [navigate, isAuthenticated]);
 
-  // Fetch user's orders when the component mounts or when the orders tab is selected
-  useEffect(() => {
-    if (isAuthenticated && activeTab === "orders") {
-      const fetchOrders = async () => {
-        try {
-          setLoading(true);
-          setError("");
-          const response = await ordersAPI.getUserOrders();
-          // Ensure orders is always an array
-          const ordersData = response.data?.data || response.data || [];
-          setOrders(Array.isArray(ordersData) ? ordersData : []);
-        } catch (err) {
-          setError("Failed to load orders");
-          console.error("Error fetching orders:", err);
-        } finally {
-          setLoading(false);
-        }
-      };
+  const {
+    data: ordersData,
+    isLoading: ordersLoading,
+    error: ordersError,
+    refetch,
+  } = useGetUserOrdersQuery(undefined, {
+    skip: !isAuthenticated || activeTab !== "orders",
+  });
 
-      fetchOrders();
+  // Update orders state when the query result changes
+  useEffect(() => {
+    if (ordersData) {
+      // Ensure orders is always an array
+      const processedOrders = Array.isArray(ordersData) ? ordersData : [];
+      setOrders(processedOrders);
     }
-  }, [isAuthenticated, activeTab]);
+  }, [ordersData]);
 
   if (!isAuthenticated) {
     return null;
@@ -104,7 +99,7 @@ const Dashboard = () => {
   }
 
   const renderOrders = () => {
-    if (loading) {
+    if (ordersLoading || loading) {
       return (
         <div className="flex justify-center items-center py-8">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
@@ -112,10 +107,22 @@ const Dashboard = () => {
       );
     }
 
-    if (error) {
+    if (ordersError || error) {
       return (
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <p className="text-red-800">{error}</p>
+          <p className="text-red-800">
+            {error ||
+              ordersError?.data?.message ||
+              ordersError?.error ||
+              "Failed to load orders"}
+          </p>
+          <button
+            type="button"
+            className="mt-2 text-sm text-red-600 hover:text-red-800 font-medium"
+            onClick={() => refetch()}
+          >
+            Retry
+          </button>
         </div>
       );
     }
@@ -123,7 +130,18 @@ const Dashboard = () => {
     if (orders.length === 0) {
       return (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">Order History</h3>
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Order History
+            </h3>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="text-sm text-primary-600 hover:text-primary-800 font-medium"
+            >
+              Refresh
+            </button>
+          </div>
           <div className="bg-gray-50 rounded-lg p-8 text-center">
             <ClipboardDocumentListIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-600">No orders found</p>
@@ -148,13 +166,22 @@ const Dashboard = () => {
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-semibold text-gray-900">Order History</h3>
-          <button
-            type="button"
-            onClick={() => navigate("/dashboard/orders")}
-            className="text-sm text-primary-600 hover:text-primary-800 font-medium"
-          >
-            View All Orders
-          </button>
+          <div className="flex space-x-2">
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="text-sm text-primary-600 hover:text-primary-800 font-medium"
+            >
+              Refresh
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/dashboard/orders")}
+              className="text-sm text-primary-600 hover:text-primary-800 font-medium"
+            >
+              View All Orders
+            </button>
+          </div>
         </div>
         <div className="space-y-4">
           {orders.slice(0, 5).map((order) => (
@@ -353,7 +380,7 @@ const Dashboard = () => {
               className="sr-only peer"
               defaultChecked
             />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-hidden peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
           </label>
         </div>
 
@@ -370,7 +397,7 @@ const Dashboard = () => {
               type="checkbox"
               className="sr-only peer"
             />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-hidden peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
           </label>
         </div>
       </div>

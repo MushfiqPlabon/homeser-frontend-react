@@ -231,7 +231,7 @@ const Cart = () => {
                       className="flex items-center space-x-4 p-4 border border-gray-200/50 rounded-lg backdrop-blur-sm bg-white/50"
                     >
                       {/* Service Image */}
-                      <div className="flex-shrink-0">
+                      <div className="shrink-0">
                         {item.service.image_url ? (
                           <LazyImage
                             src={item.service.image_url}

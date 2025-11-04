@@ -14,11 +14,22 @@ import { useId, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ProfileSkeleton } from "../components";
 import { useAuth } from "../context/AuthContext";
-import { useProfile, useUpdateProfile } from "../hooks/useApi";
+import {
+  useGetProfileQuery,
+  useGetUserStatsQuery,
+  useUpdateProfileMutation,
+} from "../store/extendedApiSlice";
 
 const ProfilePage = () => {
-  const { user, updateProfile } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const { isLoading, error, refetch } = useGetProfileQuery(undefined, {
+    skip: !user,
+  });
+  const [_updateProfileMutation] = useUpdateProfileMutation();
+  const { data: userStats } = useGetUserStatsQuery(undefined, {
+    skip: !user,
+  });
 
   const firstNameInputId = useId();
   const lastNameInputId = useId();
@@ -36,13 +47,10 @@ const ProfilePage = () => {
 
   const fileInputRef = useRef(null);
 
-  const {
-    isLoading: profileLoading,
-    isError: profileError,
-    refetch: refetchProfile,
-  } = useProfile();
-
-  const [updateProfileData] = useUpdateProfile();
+  // Profile data already loaded from useGetProfileQuery above
+  const profileLoading = isLoading;
+  const profileError = error;
+  const refetchProfile = refetch;
 
   // Initialize form data with user information
   const [formData, setFormData] = useState({
@@ -172,7 +180,7 @@ const ProfilePage = () => {
 
   if (profileLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50 py-8">
+      <div className="min-h-screen bg-linear-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50 py-8">
         <ProfileSkeleton />
       </div>
     );
@@ -180,7 +188,7 @@ const ProfilePage = () => {
 
   if (profileError) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
         <div className="text-center card">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
             Error Loading Profile
@@ -202,7 +210,7 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50 py-8">
+    <div className="min-h-screen bg-linear-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center space-x-3 mb-8">
           <UserCircleIcon className="h-8 w-8 text-primary-600" />
@@ -242,7 +250,7 @@ const ProfilePage = () => {
                     <button
                       type="button"
                       onClick={triggerFileInput}
-                      className="absolute bottom-0 right-0 bg-primary-600 rounded-full p-2 text-white shadow-lg hover:bg-primary-700 focus:outline-none"
+                      className="absolute bottom-0 right-0 bg-primary-600 rounded-full p-2 text-white shadow-lg hover:bg-primary-700 focus:outline-hidden"
                     >
                       <CameraIcon className="h-5 w-5" />
                     </button>
@@ -280,7 +288,7 @@ const ProfilePage = () => {
                   <ClipboardDocumentListIcon className="h-5 w-5 text-gray-400 mr-3" />
                   <div>
                     <p className="text-sm font-medium text-gray-900">
-                      0 Orders
+                      {userStats?.orders || 0} Orders
                     </p>
                     <p className="text-xs text-gray-600">Total placed</p>
                   </div>
@@ -290,7 +298,7 @@ const ProfilePage = () => {
                   <StarIcon className="h-5 w-5 text-gray-400 mr-3" />
                   <div>
                     <p className="text-sm font-medium text-gray-900">
-                      0 Reviews
+                      {userStats?.reviews || 0} Reviews
                     </p>
                     <p className="text-xs text-gray-600">Submitted</p>
                   </div>
@@ -300,7 +308,7 @@ const ProfilePage = () => {
                   <HeartIcon className="h-5 w-5 text-gray-400 mr-3" />
                   <div>
                     <p className="text-sm font-medium text-gray-900">
-                      0 Favorites
+                      {userStats?.favorites || 0} Favorites
                     </p>
                     <p className="text-xs text-gray-600">Saved services</p>
                   </div>

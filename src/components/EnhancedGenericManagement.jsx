@@ -93,7 +93,7 @@ const EnhancedGenericManagement = () => {
                 >
                   Search Query
                 </label>
-                <div className="relative rounded-md shadow-sm">
+                <div className="relative rounded-md shadow-xs">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
                   </div>
@@ -116,7 +116,7 @@ const EnhancedGenericManagement = () => {
                 </label>
                 <select
                   id={resultsLimitId}
-                  className="w-full px-3 py-2 border border-gray-300/50 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                  className="w-full px-3 py-2 border border-gray-300/50 rounded-lg focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                   value={searchLimit}
                   onChange={(e) => setSearchLimit(Number(e.target.value))}
                 >
@@ -134,7 +134,7 @@ const EnhancedGenericManagement = () => {
                 </label>
                 <select
                   id={searchLanguageId}
-                  className="w-full px-3 py-2 border border-gray-300/50 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
+                  className="w-full px-3 py-2 border border-gray-300/50 rounded-lg focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 bg-white/50 backdrop-blur-sm"
                   value={searchLanguage}
                   onChange={(e) => setSearchLanguage(e.target.value)}
                 >
@@ -164,7 +164,7 @@ const EnhancedGenericManagement = () => {
                       key={result.id || result.name}
                       className="flex items-start p-4 border border-gray-200/50 rounded-lg backdrop-blur-sm bg-white/50"
                     >
-                      <div className="flex-shrink-0 w-16 h-16 rounded-lg bg-gray-200 flex items-center justify-center mr-4">
+                      <div className="shrink-0 w-16 h-16 rounded-lg bg-gray-200 flex items-center justify-center mr-4">
                         <img
                           src={result.image_url}
                           alt={result.name}
@@ -221,7 +221,7 @@ const EnhancedGenericManagement = () => {
                         {popularSearches?.popular_searches?.indexOf(search) + 1}{" "}
                         {search.query}
                       </span>
-                      <span className="text-sm bg-gray-100 px-2 py-1 rounded">
+                      <span className="text-sm bg-gray-100 px-2 py-1 rounded-sm">
                         {search.count} searches
                       </span>
                     </li>

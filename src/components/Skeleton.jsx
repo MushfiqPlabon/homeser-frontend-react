@@ -15,7 +15,7 @@ const Skeleton = ({
   const variantClasses = {
     text: "rounded-md",
     circle: "rounded-full",
-    rect: "rounded-sm",
+    rect: "rounded-xs",
   };
 
   return (

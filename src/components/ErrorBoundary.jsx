@@ -65,13 +65,13 @@ class ErrorBoundary extends Component {
                 <button
                   type="button"
                   onClick={() => window.location.reload()}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-xs text-white bg-primary-600 hover:bg-primary-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                 >
                   Reload Page
                 </button>
                 <Link
                   to="/"
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-base font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-base font-medium rounded-md shadow-xs text-gray-700 bg-white hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                 >
                   Go Home
                 </Link>

@@ -571,7 +571,7 @@ const Register = () => {
                 isValid && !loading
                   ? "bg-primary-600 hover:bg-primary-700"
                   : "bg-primary-400 cursor-not-allowed"
-              } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500`}
+              } focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary-500`}
             >
               {loading ? "Creating account..." : "Create account"}
             </button>

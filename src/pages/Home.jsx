@@ -4,100 +4,18 @@ import {
   StarIcon,
   UserGroupIcon,
 } from "@heroicons/react/24/outline";
-import axios from "axios";
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import LazyImage from "../components/LazyImage";
-import { servicesAPI } from "../utils/api";
+import { useGetServicesQuery } from "../store/extendedApiSlice";
 import { getFallbackImage } from "../utils/imageUtils";
 
 const Home = () => {
-  const [featuredServices, setFeaturedServices] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: servicesData, isLoading: loading } = useGetServicesQuery({
+    page_size: 4,
+  });
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchFeaturedServices = async () => {
-      try {
-        const response = await servicesAPI.getServices({ page_size: 4 });
-        // Only update state if component is still mounted
-        if (isMounted) {
-          // Extract services from the nested response data
-          let services = [];
-          if (
-            response.data?.data &&
-            Array.isArray(response.data.data.results)
-          ) {
-            services = response.data.data.results;
-          } else if (response.data && Array.isArray(response.data.results)) {
-            services = response.data.results;
-          } else if (Array.isArray(response.data)) {
-            services = response.data;
-          }
-
-          // Ensure we have an array before calling slice
-          if (Array.isArray(services)) {
-            setFeaturedServices(services.slice(0, 4)); // Get first 4 services
-          } else {
-            // If we don't have an array, set empty array
-            setFeaturedServices([]);
-          }
-        }
-      } catch (error) {
-        // Only show error in console if it's not a cancellation error
-        if (!axios.isCancel(error)) {
-          console.error("Error fetching featured services:", error);
-        }
-
-        // Only update state if component is still mounted
-        if (isMounted) {
-          // Fallback to hardcoded services if API fails
-          setFeaturedServices([
-            {
-              id: 1,
-              image_url: "/images/service_cleaning.png",
-              name: "House Cleaning",
-              short_desc: "Professional deep cleaning services for your home",
-              price: "2500",
-            },
-            {
-              id: 2,
-              image_url: "/images/service_plumbing.png",
-              name: "Plumbing",
-              short_desc: "Expert plumbing repair and installation services",
-              price: "1200",
-            },
-            {
-              id: 3,
-              image_url: "/images/service_electrical.png",
-              name: "Electrical Work",
-              short_desc: "Safe and reliable electrical repair services",
-              price: "1500",
-            },
-            {
-              id: 4,
-              image_url: "/images/service_plumbing.png",
-              name: "Garden Maintenance",
-              short_desc: "Keep your garden beautiful and well-maintained",
-              price: "2000",
-            },
-          ]);
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchFeaturedServices();
-
-    // Cleanup function to set isMounted to false when component unmounts
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  // Extract services from response
+  const featuredServices = servicesData?.results?.slice(0, 4) || [];
 
   const features = [
     {
@@ -163,7 +81,7 @@ const Home = () => {
           backgroundRepeat: "no-repeat",
         }}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-primary-600/20 to-primary-800/20 backdrop-blur-sm"></div>
+        <div className="absolute inset-0 bg-linear-to-r from-primary-600/20 to-primary-800/20 backdrop-blur-sm"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold mb-6 backdrop-blur-sm bg-black/20 text-white rounded-2xl p-6 inline-block drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
@@ -180,7 +98,7 @@ const Home = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 to="/services"
-                className="btn-primary backdrop-blur-sm bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)]"
+                className="btn-primary backdrop-blur-sm bg-linear-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)]"
               >
                 Browse Services
               </Link>
@@ -212,47 +130,47 @@ const Home = () => {
               // Show loading placeholders while fetching services
               <>
                 <div
-                  key="loading-placeholder-1"
+                  key="loading-service-1"
                   className="card hover:shadow-lg transition-shadow animate-pulse"
                 >
                   <div className="text-center">
                     <div className="h-12 w-12 mx-auto mb-4 rounded-full bg-gray-200" />
-                    <div className="h-6 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded mb-4"></div>
-                    <div className="h-5 bg-gray-200 rounded w-3/4 mx-auto"></div>
+                    <div className="h-6 bg-gray-200 rounded-sm mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded-sm mb-4"></div>
+                    <div className="h-5 bg-gray-200 rounded-sm w-3/4 mx-auto"></div>
                   </div>
                 </div>
                 <div
-                  key="loading-placeholder-2"
+                  key="loading-service-2"
                   className="card hover:shadow-lg transition-shadow animate-pulse"
                 >
                   <div className="text-center">
                     <div className="h-12 w-12 mx-auto mb-4 rounded-full bg-gray-200" />
-                    <div className="h-6 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded mb-4"></div>
-                    <div className="h-5 bg-gray-200 rounded w-3/4 mx-auto"></div>
+                    <div className="h-6 bg-gray-200 rounded-sm mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded-sm mb-4"></div>
+                    <div className="h-5 bg-gray-200 rounded-sm w-3/4 mx-auto"></div>
                   </div>
                 </div>
                 <div
-                  key="loading-placeholder-3"
+                  key="loading-service-3"
                   className="card hover:shadow-lg transition-shadow animate-pulse"
                 >
                   <div className="text-center">
                     <div className="h-12 w-12 mx-auto mb-4 rounded-full bg-gray-200" />
-                    <div className="h-6 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded mb-4"></div>
-                    <div className="h-5 bg-gray-200 rounded w-3/4 mx-auto"></div>
+                    <div className="h-6 bg-gray-200 rounded-sm mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded-sm mb-4"></div>
+                    <div className="h-5 bg-gray-200 rounded-sm w-3/4 mx-auto"></div>
                   </div>
                 </div>
                 <div
-                  key="loading-placeholder-4"
+                  key="loading-service-4"
                   className="card hover:shadow-lg transition-shadow animate-pulse"
                 >
                   <div className="text-center">
                     <div className="h-12 w-12 mx-auto mb-4 rounded-full bg-gray-200" />
-                    <div className="h-6 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded mb-4"></div>
-                    <div className="h-5 bg-gray-200 rounded w-3/4 mx-auto"></div>
+                    <div className="h-6 bg-gray-200 rounded-sm mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded-sm mb-4"></div>
+                    <div className="h-5 bg-gray-200 rounded-sm w-3/4 mx-auto"></div>
                   </div>
                 </div>
               </>
@@ -281,7 +199,9 @@ const Home = () => {
                     <h3 className="text-xl font-semibold text-gray-900 mb-2">
                       {service.name}
                     </h3>
-                    <p className="text-gray-600 mb-4">{service.short_desc}</p>
+                    <p className="text-gray-600 mb-4 line-clamp-2">
+                      {service.short_desc}
+                    </p>
                     <p className="text-primary-600 font-semibold">
                       Starting from ৳{service.price}
                     </p>
@@ -418,7 +338,7 @@ const Home = () => {
                 </div>
                 <p className="text-gray-600 mb-4">"{testimonial.comment}"</p>
                 <div className="flex items-center">
-                  <div className="flex-shrink-0">
+                  <div className="shrink-0">
                     <div className="bg-gray-200 border-2 border-dashed rounded-xl w-10 h-10" />
                   </div>
                   <div className="ml-3">

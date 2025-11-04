@@ -27,6 +27,12 @@ const NotFound = lazy(() => import("../pages/NotFound"));
 // Service provider pages
 const CreateServicePage = lazy(() => import("../pages/CreateServicePage"));
 const EditServicePage = lazy(() => import("../pages/EditServicePage"));
+// User pages
+const FavoritesPage = lazy(() => import("../pages/FavoritesPage"));
+const ProfilePage = lazy(() => import("../pages/ProfilePage"));
+const OrdersPage = lazy(() => import("../pages/OrdersPage"));
+const OrderDetailPage = lazy(() => import("../pages/OrderDetailPage"));
+const ReviewsPage = lazy(() => import("../pages/ReviewsPage"));
 
 const AnimatedRoutes = () => {
   const location = useLocation();
@@ -35,7 +41,7 @@ const AnimatedRoutes = () => {
     <AnimatePresence mode="wait">
       <Suspense
         fallback={
-          <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
+          <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 backdrop-blur-sm bg-white/30 rounded-full p-2"></div>
           </div>
         }
@@ -119,6 +125,56 @@ const AnimatedRoutes = () => {
               <ProtectedRoute>
                 <PageTransition>
                   <Dashboard />
+                </PageTransition>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/favorites"
+            element={
+              <ProtectedRoute>
+                <PageTransition>
+                  <FavoritesPage />
+                </PageTransition>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <PageTransition>
+                  <ProfilePage />
+                </PageTransition>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/orders"
+            element={
+              <ProtectedRoute>
+                <PageTransition>
+                  <OrdersPage />
+                </PageTransition>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/orders/:orderId"
+            element={
+              <ProtectedRoute>
+                <PageTransition>
+                  <OrderDetailPage />
+                </PageTransition>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reviews"
+            element={
+              <ProtectedRoute>
+                <PageTransition>
+                  <ReviewsPage />
                 </PageTransition>
               </ProtectedRoute>
             }

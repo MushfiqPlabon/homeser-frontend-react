@@ -50,7 +50,7 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
             "homeser_auth_tokens",
             JSON.stringify({
               access: refreshResult.data.access,
-              refresh: tokens.refresh,
+              refresh: refreshResult.data.refresh || tokens.refresh,
             }),
           );
           // Retry the original request with new token

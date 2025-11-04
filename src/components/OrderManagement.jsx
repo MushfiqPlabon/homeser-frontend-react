@@ -286,7 +286,7 @@ const OrderManagement = () => {
                             handleStatusChange(order.id, e.target.value)
                           }
                           disabled={isUpdating}
-                          className="text-sm border border-gray-300/50 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/50 backdrop-blur-sm"
+                          className="text-sm border border-gray-300/50 rounded-sm px-2 py-1 focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/50 backdrop-blur-sm"
                         >
                           {statusOptions.map((option) => (
                             <option key={option.value} value={option.value}>

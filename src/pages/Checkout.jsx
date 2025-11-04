@@ -183,7 +183,7 @@ const Checkout = () => {
   if (!isAuthenticated) {
     // Don't return null; instead show a loading state while redirect happens in useEffect
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
         <div className="text-center card">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
           <p className="mt-4 text-lg">Redirecting to login...</p>
@@ -194,7 +194,7 @@ const Checkout = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
         <div className="text-center card">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
           <p className="mt-4 text-lg">Loading checkout...</p>
@@ -205,7 +205,7 @@ const Checkout = () => {
 
   if (isError) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
         <div className="text-center card">
           <h2 className="text-2xl font-bold text-red-600 mb-4">
             Error Loading Cart
@@ -230,7 +230,7 @@ const Checkout = () => {
 
   if (isEmpty) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50">
         <div className="text-center card">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
             Cart is Empty
@@ -255,7 +255,7 @@ const Checkout = () => {
   const total = cartData?.total || 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50 py-8">
+    <div className="min-h-screen bg-linear-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50 py-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Checkout Form */}
@@ -429,7 +429,7 @@ const Checkout = () => {
                   key={item.id}
                   className="flex items-center space-x-4 p-3 border border-gray-200/50 rounded-lg backdrop-blur-sm bg-white/50"
                 >
-                  <div className="flex-shrink-0">
+                  <div className="shrink-0">
                     {item.service.image_url ? (
                       <LazyImage
                         src={item.service.image_url}

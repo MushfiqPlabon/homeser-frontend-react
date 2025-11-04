@@ -16,6 +16,10 @@ export const extendedApiSlice = createApi({
     "Payment",
     "Search",
     "Settings",
+    "Favorite",
+    "UserPreferences",
+    "UserStats",
+    "Analytics",
   ],
   // Global cache configuration
   keepUnusedDataFor: 60, // 1 minute default
@@ -84,11 +88,13 @@ export const extendedApiSlice = createApi({
         params,
       }),
       providesTags: ["Service"],
+      keepUnusedDataFor: 120, // 2 minutes for service lists - balances freshness with performance
     }),
 
     getService: builder.query({
       query: (id) => `/services/${id}/`,
       providesTags: (_result, _error, id) => [{ type: "Service", id }],
+      keepUnusedDataFor: 300, // 5 minutes for individual services - longer cache for less frequent changes
     }),
 
     createService: builder.mutation({
@@ -353,6 +359,17 @@ export const extendedApiSlice = createApi({
         { type: "Review", id: `SERVICE_REVIEWS_${serviceId}` },
         "Review",
       ],
+    }),
+
+    // Categories Endpoints
+    getCategories: builder.query({
+      query: () => "/categories/",
+      providesTags: ["Category"],
+    }),
+
+    getCategory: builder.query({
+      query: (id) => `/categories/${id}/`,
+      providesTags: (_result, _error, id) => [{ type: "Category", id }],
     }),
 
     // Extended Categories Endpoints
@@ -680,6 +697,204 @@ export const extendedApiSlice = createApi({
       }),
       invalidatesTags: ["Payment"],
     }),
+
+    // Favorites Endpoints
+    getFavorites: builder.query({
+      query: () => "/favorites/",
+      providesTags: ["Favorite"],
+    }),
+
+    addFavorite: builder.mutation({
+      query: (serviceId) => ({
+        url: "/favorites/add/",
+        method: "POST",
+        body: { service_id: serviceId },
+      }),
+      invalidatesTags: ["Favorite"],
+    }),
+
+    removeFavorite: builder.mutation({
+      query: (serviceId) => ({
+        url: `/favorites/remove/${serviceId}/`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Favorite"],
+    }),
+
+    // User Preferences Endpoints
+    getUserPreferences: builder.query({
+      query: () => "/user/preferences/",
+      providesTags: ["UserPreferences"],
+    }),
+
+    updateUserPreferences: builder.mutation({
+      query: (preferences) => ({
+        url: "/user/preferences/",
+        method: "PATCH",
+        body: preferences,
+      }),
+      invalidatesTags: ["UserPreferences"],
+    }),
+
+    // User Stats Endpoints
+    getUserStats: builder.query({
+      query: () => "/user/stats/",
+      providesTags: ["UserStats"],
+    }),
+
+    changePassword: builder.mutation({
+      query: (passwordData) => ({
+        url: "/user/change-password/",
+        method: "POST",
+        body: passwordData,
+      }),
+    }),
+
+    // Analytics Endpoints
+    getProviderAnalytics: builder.query({
+      query: () => "/analytics/provider/",
+      providesTags: ["Analytics"],
+    }),
+
+    getCustomerAnalytics: builder.query({
+      query: () => "/analytics/customer/",
+      providesTags: ["Analytics"],
+    }),
+
+    getErrorAnalytics: builder.query({
+      query: () => "/analytics/errors/",
+      providesTags: ["Analytics"],
+    }),
+
+    clearErrorAnalytics: builder.mutation({
+      query: () => ({
+        url: "/analytics/errors/clear/",
+        method: "POST",
+      }),
+      invalidatesTags: ["Analytics"],
+    }),
+
+    reportClientError: builder.mutation({
+      query: (errorData) => ({
+        url: "/analytics/errors/report/",
+        method: "POST",
+        body: errorData,
+      }),
+    }),
+
+    // Order Action Endpoints
+    cancelOrder: builder.mutation({
+      query: (orderId) => ({
+        url: `/orders/${orderId}/cancel/`,
+        method: "POST",
+      }),
+      invalidatesTags: ["Order"],
+    }),
+
+    requestRefund: builder.mutation({
+      query: ({ orderId, reason }) => ({
+        url: `/orders/${orderId}/refund/`,
+        method: "POST",
+        body: { reason },
+      }),
+      invalidatesTags: ["Order"],
+    }),
+
+    // Service Action Endpoints
+    toggleServiceAvailability: builder.mutation({
+      query: (serviceId) => ({
+        url: `/services/${serviceId}/toggle-availability/`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["Service"],
+    }),
+
+    // Password Reset Endpoints
+    requestPasswordReset: builder.mutation({
+      query: (email) => ({
+        url: `/auth/password-reset/`,
+        method: "POST",
+        body: { email },
+      }),
+    }),
+
+    validateResetToken: builder.mutation({
+      query: ({ uidb64, token }) => ({
+        url: `/auth/password-reset/validate/`,
+        method: "POST",
+        body: { uidb64, token },
+      }),
+    }),
+
+    confirmPasswordReset: builder.mutation({
+      query: ({ uidb64, token, new_password, confirm_password }) => ({
+        url: `/auth/password-reset/confirm/`,
+        method: "POST",
+        body: { uidb64, token, new_password, confirm_password },
+      }),
+    }),
+
+    // Email Verification Endpoints
+    verifyEmail: builder.mutation({
+      query: ({ uidb64, token }) => ({
+        url: `/auth/email/verify/${uidb64}/${token}/`,
+        method: "GET",
+      }),
+    }),
+
+    resendVerificationEmail: builder.mutation({
+      query: (email) => ({
+        url: "/auth/email/resend/",
+        method: "POST",
+        body: { email },
+      }),
+    }),
+
+    // Authentication endpoints
+    login: builder.mutation({
+      query: (credentials) => ({
+        url: "/auth/login/",
+        method: "POST",
+        body: credentials,
+      }),
+    }),
+
+    register: builder.mutation({
+      query: (userData) => ({
+        url: "/auth/register/",
+        method: "POST",
+        body: userData,
+      }),
+    }),
+
+    logout: builder.mutation({
+      query: () => ({
+        url: "/auth/logout/",
+        method: "POST",
+        body: {},
+      }),
+    }),
+
+    // Profile endpoints
+    getProfile: builder.query({
+      query: () => "/profile/",
+      providesTags: ["User"],
+    }),
+
+    updateProfile: builder.mutation({
+      query: (profileData) => ({
+        url: "/profile/",
+        method: "PUT",
+        body: profileData,
+      }),
+      invalidatesTags: ["User"],
+    }),
+
+    // Contracts endpoint
+    getApiContracts: builder.query({
+      query: () => "/contracts/all/",
+      providesTags: ["Analytics"], // Using existing tag since contracts are related to analytics
+    }),
   }),
 });
 
@@ -693,12 +908,15 @@ export const {
 
   // Categories
   useGetCategoriesQuery,
+  useGetCategoryQuery,
 
   // Users
   useGetUsersQuery,
   useGetAdminUserQuery,
   useUpdateAdminUserMutation,
   useDeleteAdminUserMutation,
+  useGetProfileQuery,
+  useUpdateProfileMutation,
 
   // Reviews
   useGetReviewsQuery,
@@ -763,4 +981,42 @@ export const {
   useUpdateServiceProviderServiceMutation,
   usePartialUpdateServiceProviderServiceMutation,
   useDeleteServiceProviderServiceMutation,
+
+  // Favorites
+  useGetFavoritesQuery,
+  useAddFavoriteMutation,
+  useRemoveFavoriteMutation,
+
+  // User Preferences
+  useGetUserPreferencesQuery,
+  useUpdateUserPreferencesMutation,
+
+  // User Stats
+  useGetUserStatsQuery,
+  useChangePasswordMutation,
+
+  // Analytics
+  useGetProviderAnalyticsQuery,
+  useGetCustomerAnalyticsQuery,
+  useGetErrorAnalyticsQuery,
+  useClearErrorAnalyticsMutation,
+  useReportClientErrorMutation,
+
+  // Order Actions
+  useCancelOrderMutation,
+  useRequestRefundMutation,
+
+  // Service Actions
+  useToggleServiceAvailabilityMutation,
+
+  // Email Verification
+  useVerifyEmailMutation,
+  useResendVerificationEmailMutation,
+  useGetApiContractsQuery,
+  useLoginMutation,
+  useRegisterMutation,
+  useLogoutMutation,
+  useRequestPasswordResetMutation,
+  useValidateResetTokenMutation,
+  useConfirmPasswordResetMutation,
 } = extendedApiSlice;

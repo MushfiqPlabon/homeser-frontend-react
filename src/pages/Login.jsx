@@ -138,7 +138,7 @@ const Login = () => {
             </div>
           )}
 
-          <div className="rounded-md shadow-sm -space-y-px">
+          <div className="rounded-md shadow-xs -space-y-px">
             <div>
               <label
                 htmlFor={emailId}
@@ -300,7 +300,7 @@ const Login = () => {
                 isValid && !loading
                   ? "bg-primary-600 hover:bg-primary-700"
                   : "bg-primary-400 cursor-not-allowed"
-              } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500`}
+              } focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary-500`}
             >
               {loading ? "Signing in..." : "Sign in"}
             </button>

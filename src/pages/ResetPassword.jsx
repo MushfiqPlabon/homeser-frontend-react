@@ -4,7 +4,10 @@
 import { useEffect, useId, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import LoadingSpinner from "../components/LoadingSpinner";
-import { authAPI } from "../utils/api";
+import {
+  useConfirmPasswordResetMutation,
+  useValidateResetTokenMutation,
+} from "../store/extendedApiSlice";
 import { handleApiError } from "../utils/errorHandler";
 
 const ResetPassword = () => {
@@ -25,16 +28,18 @@ const ResetPassword = () => {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  const [validateResetToken] = useValidateResetTokenMutation();
+
   // Validate token on component mount
   useEffect(() => {
     const validateToken = async () => {
       try {
-        const response = await authAPI.validateResetToken(uidb64, token);
-        if (response.data.valid) {
+        const response = await validateResetToken({ uidb64, token }).unwrap();
+        if (response.valid) {
           setTokenValid(true);
-          setUserEmail(response.data.email);
+          setUserEmail(response.email || "user");
         } else {
-          setError(response.data.error || "Invalid or expired reset link.");
+          setError(response.error || "Invalid or expired reset link.");
         }
       } catch (_err) {
         setError("Invalid or expired reset link.");
@@ -49,7 +54,7 @@ const ResetPassword = () => {
       setError("Invalid reset link.");
       setValidating(false);
     }
-  }, [uidb64, token]);
+  }, [uidb64, token, validateResetToken]);
 
   const handleInputChange = (e) => {
     setFormData({
@@ -57,6 +62,8 @@ const ResetPassword = () => {
       [e.target.name]: e.target.value,
     });
   };
+
+  const [confirmPasswordReset] = useConfirmPasswordResetMutation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -75,14 +82,14 @@ const ResetPassword = () => {
     setError("");
 
     try {
-      const response = await authAPI.confirmPasswordReset({
+      const response = await confirmPasswordReset({
         uidb64,
         token,
         new_password: formData.new_password,
         confirm_password: formData.confirm_password,
-      });
+      }).unwrap();
 
-      setMessage(response.data.message);
+      setMessage(response.message || "Password reset successful.");
 
       // Redirect to login after 3 seconds
       setTimeout(() => {
@@ -169,7 +176,7 @@ const ResetPassword = () => {
                   required
                   value={formData.new_password}
                   onChange={handleInputChange}
-                  className="mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                  className="mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
                   placeholder="Enter new password (min. 8 characters)"
                 />
               </div>
@@ -188,7 +195,7 @@ const ResetPassword = () => {
                   required
                   value={formData.confirm_password}
                   onChange={handleInputChange}
-                  className="mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                  className="mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-hidden focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
                   placeholder="Confirm new password"
                 />
               </div>
@@ -208,7 +215,7 @@ const ResetPassword = () => {
                   !formData.new_password ||
                   !formData.confirm_password
                 }
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? <LoadingSpinner size="sm" /> : "Update Password"}
               </button>

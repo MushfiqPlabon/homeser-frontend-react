@@ -11,13 +11,13 @@ const OrderSkeleton = () => {
               variant="text"
               height={24}
               width="120px"
-              className="mb-2 rounded"
+              className="mb-2 rounded-sm"
             />
             <Skeleton
               variant="text"
               height={16}
               width="80px"
-              className="rounded"
+              className="rounded-sm"
             />
           </div>
           <Skeleton
@@ -46,26 +46,26 @@ const OrderSkeleton = () => {
                   variant="text"
                   height={20}
                   width="60%"
-                  className="mb-2 rounded"
+                  className="mb-2 rounded-sm"
                 />
                 <Skeleton
                   variant="text"
                   height={14}
                   width="40%"
-                  className="mb-2 rounded"
+                  className="mb-2 rounded-sm"
                 />
                 <div className="flex items-center">
                   <Skeleton
                     variant="text"
                     height={16}
                     width="50px"
-                    className="mr-4 rounded"
+                    className="mr-4 rounded-sm"
                   />
                   <Skeleton
                     variant="text"
                     height={16}
                     width="70px"
-                    className="rounded"
+                    className="rounded-sm"
                   />
                 </div>
               </div>
@@ -80,13 +80,13 @@ const OrderSkeleton = () => {
               variant="text"
               height={16}
               width="80px"
-              className="rounded"
+              className="rounded-sm"
             />
             <Skeleton
               variant="text"
               height={16}
               width="60px"
-              className="rounded"
+              className="rounded-sm"
             />
           </div>
           <div className="flex justify-between mb-2">
@@ -94,13 +94,13 @@ const OrderSkeleton = () => {
               variant="text"
               height={16}
               width="100px"
-              className="rounded"
+              className="rounded-sm"
             />
             <Skeleton
               variant="text"
               height={16}
               width="60px"
-              className="rounded"
+              className="rounded-sm"
             />
           </div>
           <div className="flex justify-between font-bold text-lg mt-4 pt-4 border-t border-gray-200">
@@ -108,13 +108,13 @@ const OrderSkeleton = () => {
               variant="text"
               height={20}
               width="120px"
-              className="rounded"
+              className="rounded-sm"
             />
             <Skeleton
               variant="text"
               height={20}
               width="80px"
-              className="rounded"
+              className="rounded-sm"
             />
           </div>
         </div>

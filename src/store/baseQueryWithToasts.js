@@ -8,10 +8,17 @@ const API_BASE_URL =
 export const baseQueryWithToasts = fetchBaseQuery({
   baseUrl: API_BASE_URL,
   prepareHeaders: (headers) => {
-    // Get token from localStorage (matching existing auth pattern)
-    const token = localStorage.getItem("access_token");
-    if (token) {
-      headers.set("Authorization", `Bearer ${token}`);
+    // Get token from localStorage using consistent storage method
+    const storedTokens = localStorage.getItem("homeser_auth_tokens");
+    if (storedTokens) {
+      try {
+        const tokens = JSON.parse(storedTokens);
+        if (tokens.access) {
+          headers.set("Authorization", `Bearer ${tokens.access}`);
+        }
+      } catch (e) {
+        console.error("Failed to parse stored tokens:", e);
+      }
     }
     return headers;
   },
